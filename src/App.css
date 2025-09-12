@@ -1,6 +1,9 @@
 *{
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+body{
+  background-color: #e4e4e4;
+}
 .App {
   text-align: center;
 }
@@ -42,13 +45,16 @@
 
 .login-container{
   font-size: 18px;
-  border: 1px solid black;
+  border: 1px solid whitesmoke;
   display: block;
   width: 350px;
   margin: 10% auto;
   padding: 30px;
   padding-top: 20px;
   padding-bottom: 50px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 .sr-only{
@@ -67,6 +73,7 @@
 .tbl-transactions{
   width: 100%;
   border-collapse: collapse;
+  background-color: white;
 }
 
 .tbl-transactions th{
@@ -81,7 +88,7 @@ input[type="text"], input[type="password"]{
   width: 200px;
 }
 
-/* 
+
 button{
   padding: 8px 15px;
   border: 1px solid silver;
@@ -102,7 +109,7 @@ input[type="text"], input[type="password"]{
   border: 1px solid silver;
   border-radius: 4px;
   width: 200px; 
-} */
+}
 
 
 /* button.btn-secondary{
@@ -111,6 +118,7 @@ background: rgb(149, 149, 149);
 
 button.btn-logout{
   background: #940404;
+  color: white;
 } */
 
 .login-error-message{

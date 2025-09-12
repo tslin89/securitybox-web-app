@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserLogin } from '../services/api.ts';
 import { useNavigate } from 'react-router-dom';
 const Login = () => {
@@ -6,7 +6,20 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const emailRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (emailRef.current) {
+      emailRef.current.focus();
+    }
+  }, []);
+
+  const handlePasswordKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter') {
+      handleLogin();
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -51,6 +64,7 @@ const Login = () => {
                 id="email"
                 name="email"
                 type="text"
+                ref={emailRef}
                 required
                 className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Email"
@@ -73,6 +87,7 @@ const Login = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                onKeyPress={handlePasswordKeyPress}
                 disabled={isLoading}
               />
             </div>
