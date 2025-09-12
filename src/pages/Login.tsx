@@ -19,10 +19,11 @@ const Login = () => {
 
     try {
       const result = await UserLogin(email, password);
-      
-      // Navigate to dashboard using React Router
-      navigate('/dashboard');
-      
+      if (result.status === 1) {
+        // Navigate to dashboard using React Router
+        navigate('/dashboard');
+      }
+
     } catch (err) {
       setError('Login failed. Please check your credentials.');
       console.error('Login error:', err);
@@ -39,7 +40,7 @@ const Login = () => {
             Sign in to your account
           </h2>
         </div>
-        
+
         <div className="mt-8 space-y-6">
           <div className="rounded-md shadow-sm -space-y-px">
             <div className="login-input-row">
@@ -58,7 +59,7 @@ const Login = () => {
                 disabled={isLoading}
               />
             </div>
-            
+
             <div className="login-input-row">
               <label htmlFor="password" className="sr-only">
                 Password

@@ -23,5 +23,4 @@ export const UserLogin = async (email: string, password: string) => {
         throw new Error('Login failed');
       }
       return response.json();
-    return true;
 }
