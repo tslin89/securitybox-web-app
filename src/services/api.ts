@@ -1,11 +1,25 @@
-const AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.net/api';
+import SHA256 from "crypto-js/sha256";
+//const AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.net/api';
+const AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
+
+interface Transaction {
+    id: number;
+}
 
 export const getTransactions = async (userId: string) => {
     const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/GetTransactions?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
     if (!response.ok) {
         throw new Error('Failed to fetch transactions');
     }
-    return response.json();
+
+    const data = await response.json();
+    
+    // Sort by ID descending (highest ID first)
+    if (data.data && Array.isArray(data.data)) {
+        data.data.sort((a: Transaction, b: Transaction) => b.id - a.id);
+    }
+
+    return data;
 }
 
 export const UserLogin = async (email: string, password: string) => {
@@ -16,7 +30,7 @@ export const UserLogin = async (email: string, password: string) => {
         },
         body: JSON.stringify({ 
             "Email": email,
-            "Password": password
+            "Password": SHA256(password).toString()  // Hash the password before sending
          }),
       });
       if (!response.ok) {
