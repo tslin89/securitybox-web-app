@@ -78,7 +78,7 @@ const Login = () => {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">
+            <div className="text-red-600 text-sm text-center login-error-message">
               {error}
             </div>
           )}

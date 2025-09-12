@@ -112,3 +112,10 @@ background: rgb(149, 149, 149);
 button.btn-logout{
   background: #940404;
 } */
+
+.login-error-message{
+  color: red;
+  font-size: small;
+  text-align: center;
+  padding-bottom: 20px;
+}
