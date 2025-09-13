@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getTransactions } from '../services/api';
 import { useSignalR } from '../contexts/SignalRContext';
 
+
 interface Transaction {
     id: number;
     timeStamp: string;
@@ -37,6 +38,8 @@ const PaginatedTransactionTable: React.FC = () => {
     const [pageSize, setPageSize] = useState<number>(25);
     const [totalCount, setTotalCount] = useState<number>(0);
     const [totalPages, setTotalPages] = useState<number>(0);
+
+    const didInit = React.useRef(false);
 
     const fetchTransactions = useCallback(async (
         page: number = currentPage,
@@ -84,6 +87,10 @@ const PaginatedTransactionTable: React.FC = () => {
     }, [fetchTransactions, currentPage, pageSize]);
 
     useEffect(() => {
+
+        if (didInit.current) return;     // prevent StrictMode second mount call
+        didInit.current = true;
+
         fetchTransactions();
 
         // Register for real-time updates
@@ -92,7 +99,7 @@ const PaginatedTransactionTable: React.FC = () => {
         return () => {
             offTransactionUpdate(handleSignalRUpdate);
         };
-    }, [fetchTransactions, onTransactionUpdate, offTransactionUpdate, handleSignalRUpdate]);
+    });
 
     const formatDateTime = (dateString: string): string => {
         const date = new Date(dateString);
@@ -130,7 +137,7 @@ const PaginatedTransactionTable: React.FC = () => {
     }
 
     return (
-        <div style={{  }}>
+        <div style={{}}>
             <div style={{ margin: '0 auto', padding: '5px' }}>
                 {/* Header */}
                 <div style={{

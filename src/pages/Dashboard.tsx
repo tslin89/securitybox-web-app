@@ -1,33 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getTransactions } from '../services/api';
+// import { getTransactions } from '../services/api';
 import { useSignalR } from '../contexts/SignalRContext';
 import PaginatedTransactionTable from '../components/PaginatedTransactionTable';
 
 // Define the transaction type based on your API response
-interface Transaction {
-  id: number;
-  timeStamp: string;
-  boxID: number;
-  eventCode: string;
-  doorState: number;
-  fingerprintNum: number;
-  totalWeight: number;
-  boxPosition: number;
-}
+// interface Transaction {
+//   id: number;
+//   timeStamp: string;
+//   boxID: number;
+//   eventCode: string;
+//   doorState: number;
+//   fingerprintNum: number;
+//   totalWeight: number;
+//   boxPosition: number;
+// }
 
-interface ApiResponse {
-  transactionID: string;
-  status: number;
-  message: string;
-  data: Transaction[];
-}
+// interface ApiResponse {
+//   transactionID: string;
+//   status: number;
+//   message: string;
+//   data: Transaction[];
+// }
 
 const Dashboard: React.FC = () => {
-  const { onTransactionUpdate, offTransactionUpdate, stopConnection } = useSignalR();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+  //const { onTransactionUpdate, offTransactionUpdate, stopConnection } = useSignalR();
+  // const [ , setTransactions] = useState<Transaction[]>([]);
+  // const [ , setLoading] = useState<boolean>(true);
+  // const [ , setError] = useState<string>('');
+  const { stopConnection } = useSignalR();
   const { user, logout } = useAuth();
 
   const handleLogout = async (): Promise<void> => {
@@ -48,45 +49,45 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const fetchTransactions = useCallback(async (): Promise<void> => {
-    try {
-      setLoading(true);
-      setError('');
+  // const fetchTransactions = useCallback(async (): Promise<void> => {
+  //   try {
+  //     setLoading(true);
+  //     setError('');
       
-      const response: ApiResponse = await getTransactions('', 0, 0);
+  //     const response: ApiResponse = await getTransactions('', 0, 0);
       
-      if (response.status === 1 && response.data) {
-        setTransactions(response.data);
-      } else {
-        setError('Failed to load transactions');
-      }
-    } catch (err) {
-      setError('Error fetching transactions: ' + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  //     if (response.status === 1 && response.data) {
+  //       setTransactions(response.data);
+  //     } else {
+  //       setError('Failed to load transactions');
+  //     }
+  //   } catch (err) {
+  //     setError('Error fetching transactions: ' + (err as Error).message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    fetchTransactions();
+  // useEffect(() => {
+  //   fetchTransactions();
     
-    // Register for real-time updates
-    onTransactionUpdate(fetchTransactions);
+  //   // Register for real-time updates
+  //   onTransactionUpdate(fetchTransactions);
     
-    // Cleanup
-    return () => {
-      offTransactionUpdate(fetchTransactions);
-    };
-  }, [fetchTransactions, onTransactionUpdate, offTransactionUpdate]);
+  //   // Cleanup
+  //   return () => {
+  //     offTransactionUpdate(fetchTransactions);
+  //   };
+  // }, [fetchTransactions, onTransactionUpdate, offTransactionUpdate]);
 
-  const formatDateTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
-  };
+  // const formatDateTime = (dateString: string): string => {
+  //   const date = new Date(dateString);
+  //   return date.toLocaleString();
+  // };
 
-  const getDoorStateText = (state: number): string => {
-    return state === 0 ? 'Closed' : 'Open';
-  };
+  // const getDoorStateText = (state: number): string => {
+  //   return state === 0 ? 'Closed' : 'Open';
+  // };
 
   return (
     <div className="min-h-screen bg-gray-100">

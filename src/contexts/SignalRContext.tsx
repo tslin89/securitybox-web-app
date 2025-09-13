@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode, useRef } from 'react';
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { initiateSignalR } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AlertData {
     id: string;
@@ -36,12 +37,29 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     const [connectionState, setConnectionState] = useState('Disconnected');
     const [alerts, setAlerts] = useState<AlertData[]>([]);
     const [transactionUpdateCallbacks, setTransactionUpdateCallbacks] = useState<Set<() => void>>(new Set());
+    const { isAuthenticated } = useAuth();
+
+    useEffect(() => {
+        // If user is authenticated and we’re not connected/connecting, start SignalR
+        if (isAuthenticated && (!connection || connection.state === HubConnectionState.Disconnected)) {
+            startConnection().catch(() => /* already handled by startConnection */ { });
+        }
+        // Optional: if you want to stop when user logs out:
+        if (!isAuthenticated && connection) {
+            stopConnection();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthenticated]); // we intentionally don't depend on connection/start/stop to avoid loops
+
 
     // Refs for tracking reconnection attempts
     const reconnectAttempts = useRef(0);
-    const maxReconnectAttempts = useRef(10);
+    const maxReconnectAttempts = useRef(30);
     const connectionCheckInterval = useRef<NodeJS.Timeout | null>(null);
     const lastHeartbeat = useRef<Date>(new Date());
+
+    const startRef = useRef<() => Promise<void>>(() => Promise.resolve());
+    const reconnectRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
     const addAlert = useCallback((message: string, type: AlertData['type'] = 'info') => {
         const newAlert: AlertData = {
@@ -129,30 +147,6 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         console.log(`🔌 SignalR State: ${stateString}`);
     }, []);
 
-    // Enhanced connection health monitoring
-    const startConnectionHealthCheck = useCallback(() => {
-        if (connectionCheckInterval.current) {
-            clearInterval(connectionCheckInterval.current);
-        }
-
-        connectionCheckInterval.current = setInterval(() => {
-            const now = new Date();
-            const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.current.getTime();
-
-            // If no heartbeat for 30 seconds and connection thinks it's connected
-            if (timeSinceLastHeartbeat > 30000 && connection?.state === HubConnectionState.Connected) {
-                console.warn('🚨 Connection appears stale, forcing reconnect...');
-                addAlert('Connection appears stale, attempting to reconnect...', 'warning');
-                forceReconnect();
-            }
-
-            // Log connection status every minute
-            if (connection) {
-                console.log(`💓 Connection Health Check - State: ${connection.state}, Last Heartbeat: ${timeSinceLastHeartbeat}ms ago`);
-            }
-        }, 15000); // Check every 15 seconds
-    }, [connection, addAlert]);
-
     const forceReconnect = useCallback(async (): Promise<void> => {
         console.log('🔄 Force reconnecting SignalR...');
 
@@ -167,12 +161,36 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         // Wait a bit before reconnecting
         setTimeout(async () => {
             try {
-                await startConnection();
+                await startRef.current();
             } catch (error) {
                 console.error('Error during force reconnect:', error);
                 addAlert('Force reconnection failed', 'error');
             }
         }, 1000);
+    }, [connection, addAlert]);
+
+    // Enhanced connection health monitoring
+    const startConnectionHealthCheck = useCallback(() => {
+        if (connectionCheckInterval.current) {
+            clearInterval(connectionCheckInterval.current);
+        }
+
+        connectionCheckInterval.current = setInterval(() => {
+            const now = new Date();
+            const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.current.getTime();
+
+            // If no heartbeat for 30 seconds and connection thinks it's connected
+            if (timeSinceLastHeartbeat > 30000 && connection?.state === HubConnectionState.Connected) {
+                console.warn('🚨 Connection appears stale, forcing reconnect...');
+                addAlert('Connection appears stale, attempting to reconnect...', 'warning');
+                reconnectRef.current();
+            }
+
+            // Log connection status every minute
+            if (connection) {
+                console.log(`💓 Connection Health Check - State: ${connection.state}, Last Heartbeat: ${timeSinceLastHeartbeat}ms ago`);
+            }
+        }, 15000); // Check every 15 seconds
     }, [connection, addAlert]);
 
     const startConnection = useCallback(async (): Promise<void> => {
@@ -326,7 +344,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                         // Attempt manual reconnect after a delay
                         setTimeout(() => {
                             console.log('🔄 Attempting manual reconnect after connection close...');
-                            forceReconnect();
+                            reconnectRef.current();
                         }, 5000);
                     }
                 });
@@ -361,7 +379,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
             throw error;
         }
-    }, [connection, addAlert, triggerTransactionUpdate, updateConnectionState, startConnectionHealthCheck, forceReconnect]);
+    }, [connection, addAlert, triggerTransactionUpdate, updateConnectionState, startConnectionHealthCheck]);
 
     const stopConnection = useCallback(async (): Promise<void> => {
         if (connectionCheckInterval.current) {
@@ -393,6 +411,9 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             }
         };
     }, [connection]);
+
+    useEffect(() => { startRef.current = startConnection; }, [startConnection]);
+    useEffect(() => { reconnectRef.current = forceReconnect; }, [forceReconnect]);
 
     const contextValue: SignalRContextType = {
         connection,
