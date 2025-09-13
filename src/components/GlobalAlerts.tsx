@@ -66,7 +66,7 @@ const GlobalAlerts: React.FC = () => {
   const connectionStatusStyle = {
     position: 'fixed' as const,
     top: '16px',
-    right: '16px',
+    right: '22px',
     zIndex: 50,
     display: 'flex',
     alignItems: 'center',
@@ -84,7 +84,7 @@ const GlobalAlerts: React.FC = () => {
   const alertContainerStyle = {
     position: 'fixed' as const,
     top: isAuthenticated ? '80px' : '16px',
-    right: '16px',
+    right: '22px',
     zIndex: 50,
     maxWidth: '384px'
   };

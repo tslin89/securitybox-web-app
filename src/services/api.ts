@@ -9,17 +9,51 @@ interface Transaction {
   id: number;
 }
 
-export const getTransactions = async (userId: string, page: number, size: number) => {
-  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/GetTransactions?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+export const getTransactions = async (
+  userId: string,
+  page: number = 0,
+  pageSize: number = 25) => {
+
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+    userId: userId,
+    code: "7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w=="
+  });
+
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/GetTransactions?${queryParams}`);
   if (!response.ok) {
     throw new Error('Failed to fetch transactions');
   }
 
   const data = await response.json();
 
-  // Sort by ID descending (highest ID first)
+  // // Sort by ID descending (highest ID first)
+  // if (data.data && Array.isArray(data.data)) {
+  //   data.data.sort((a: Transaction, b: Transaction) => b.id - a.id);
+  // }
+
   if (data.data && Array.isArray(data.data)) {
-    data.data.sort((a: Transaction, b: Transaction) => b.id - a.id);
+    // sort by ID descending
+    // data.data.sort((a: Transaction, b: Transaction) => b.id - a.id);
+    
+    // For now, simulate pagination (until your backend supports it)
+    // const startIndex = page * pageSize;
+    // const endIndex = startIndex + pageSize;
+    // const paginatedData = data.data.slice(startIndex, endIndex);
+    
+    // return {
+    //   ...data,
+    //   data: {
+    //     transactions: paginatedData,
+    //     totalCount: data.data.length,
+    //     page: page,
+    //     pageSize: pageSize,
+    //     totalPages: Math.ceil(data.data.length / pageSize)
+    //   }
+    // };
+
+    return data.data;
   }
 
   return data;
