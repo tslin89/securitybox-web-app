@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { getTransactions } from '../services/api.ts';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { getTransactions } from '../services/api';
+import { useSignalR } from '../contexts/SignalRContext';
+import PaginatedTransactionTable from '../components/PaginatedTransactionTable';
 
 // Define the transaction type based on your API response
 interface Transaction {
@@ -21,22 +24,36 @@ interface ApiResponse {
 }
 
 const Dashboard: React.FC = () => {
+  const { onTransactionUpdate, offTransactionUpdate, stopConnection } = useSignalR();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const { user, logout } = useAuth();
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+  const handleLogout = async (): Promise<void> => {
+    try {
+      // Stop SignalR connection
+      await stopConnection();
 
-  const fetchTransactions = async (): Promise<void> => {
+      // Logout from auth context (this clears localStorage)
+      logout();
+
+      // Navigate back to login
+      window.location.href = '/';
+
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Navigate anyway
+      window.location.href = '/';
+    }
+  };
+
+  const fetchTransactions = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError('');
       
-      // Since your getTransactions function expects userId but you're not using it in the API call,
-      // I'll pass an empty string for now. You can update this with actual user ID later.
-      const response: ApiResponse = await getTransactions('');
+      const response: ApiResponse = await getTransactions('', 0, 0);
       
       if (response.status === 1 && response.data) {
         setTransactions(response.data);
@@ -48,7 +65,19 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+    
+    // Register for real-time updates
+    onTransactionUpdate(fetchTransactions);
+    
+    // Cleanup
+    return () => {
+      offTransactionUpdate(fetchTransactions);
+    };
+  }, [fetchTransactions, onTransactionUpdate, offTransactionUpdate]);
 
   const formatDateTime = (dateString: string): string => {
     const date = new Date(dateString);
@@ -67,20 +96,20 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">Security Box Dashboard</h1>
+              <h3 className="text-xl font-semibold text-gray-900">
+                Welcome, {user?.name || 'Unknown User'}
+              </h3>
             </div>
             <div className="flex items-center space-x-4">
               <button
                 onClick={fetchTransactions}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium btn-secondary"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
               >
                 Refresh
               </button>
-              &nbsp;
               <button
-                onClick={() => {
-                  window.location.href = '/';
-                }}
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium btn-logout"
+                onClick={handleLogout}
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
                 Logout
               </button>
@@ -95,9 +124,9 @@ const Dashboard: React.FC = () => {
           {/* Transactions Table */}
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <div className="px-4 py-5 sm:px-6">
-              {/* <h3 className="text-lg leading-6 font-medium text-gray-900">
+              <h3 className="text-lg leading-6 font-medium text-gray-900">
                 Recent Transactions
-              </h3> */}
+              </h3>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">
                 Security box activity and events
               </p>
@@ -120,7 +149,7 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 tbl-transactions" border={1}>
+                <table className="min-w-full divide-y divide-gray-200 tbl-transactions">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

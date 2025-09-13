@@ -9,7 +9,7 @@ interface Transaction {
   id: number;
 }
 
-export const getTransactions = async (userId: string) => {
+export const getTransactions = async (userId: string, page: number, size: number) => {
   const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/GetTransactions?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
   if (!response.ok) {
     throw new Error('Failed to fetch transactions');
@@ -21,6 +21,17 @@ export const getTransactions = async (userId: string) => {
   if (data.data && Array.isArray(data.data)) {
     data.data.sort((a: Transaction, b: Transaction) => b.id - a.id);
   }
+
+  return data;
+}
+
+export const initiateSignalR = async () => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/negotiateSignalR?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  if (!response.ok) {
+    throw new Error('Failed to initiate SignalR');
+  }
+
+  const data = await response.json();
 
   return data;
 }
