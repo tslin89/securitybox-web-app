@@ -1,13 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserLogin } from '../services/api.ts';
+import { UserLogin } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { useSignalR } from '../contexts/SignalRContext';
+import { useAuth } from '../contexts/AuthContext';
+
 const Login = () => {
   const [email, setUseremail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { login, isAuthenticated } = useAuth();
+
+  const { startConnection } = useSignalR();
   const emailRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   useEffect(() => {
     if (emailRef.current) {
@@ -33,6 +46,23 @@ const Login = () => {
     try {
       const result = await UserLogin(email, password);
       if (result.status === 1) {
+
+        const loginData = {
+          token: result.data?.token || 'dummy-token', 
+          user: {
+            id: result.data?.user?.userID || -1,
+            name: result.data?.user?.userName || "unknown",
+            email: result.data?.user?.email || "unknown"
+          },
+          expiresIn: result.expiresIn || 24 * 60 * 60 // 24 hours in seconds
+        };
+
+        // Store auth data
+        login(loginData);
+
+        // Start SignalR connection after successful login
+        await startConnection();
+
         // Navigate to dashboard using React Router
         navigate('/dashboard');
       }
