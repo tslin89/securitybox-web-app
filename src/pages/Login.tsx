@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserLogin } from '../services/api';
+import { UserLogin, ensurePushSubscribed } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useSignalR } from '../contexts/SignalRContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -62,6 +62,10 @@ const Login = () => {
 
         // Start SignalR connection after successful login
         await startConnection();
+
+        // subscribe to push-notification
+        //await enablePush(loginData.user.id, loginData.token);
+        await ensurePushSubscribed(loginData.user.id, loginData.token);
 
         // Navigate to dashboard using React Router
         navigate('/dashboard');
