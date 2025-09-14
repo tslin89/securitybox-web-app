@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-// import { getTransactions } from '../services/api';
+import { enablePush } from '../services/api';
 import { useSignalR } from '../contexts/SignalRContext';
 import PaginatedTransactionTable from '../components/PaginatedTransactionTable';
 
@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
   // const [ , setLoading] = useState<boolean>(true);
   // const [ , setError] = useState<string>('');
   const { stopConnection } = useSignalR();
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
 
   const handleLogout = async (): Promise<void> => {
     try {
@@ -114,6 +114,24 @@ const Dashboard: React.FC = () => {
               >
                 Logout
               </button>
+
+              <button
+                onClick={() => {
+                  if (typeof user?.id === 'number' && typeof token === 'string') {
+                    enablePush(user.id, token)
+                      .then(() => alert("Notifications enabled"))
+                      .catch(e => alert(e.message));
+                  } else if (typeof user?.id !== 'number') {
+                    alert("User ID is missing or invalid.");
+                  } else {
+                    alert("Token is missing or invalid.");
+                  }
+                }}
+                disabled={typeof user?.id !== 'number'}
+              >
+                Enable notifications
+              </button>
+              
             </div>
           </div>
         </div>
