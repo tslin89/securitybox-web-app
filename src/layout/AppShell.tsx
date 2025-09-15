@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
-
+import SecondaryBar from '../components/SecondaryBar';
 import AppNavbar from '../components/AppNavbar';
 import SideMenu from '../components/SideMenu';
 import SideMenuMobile from '../components/SideMenuMobile';
@@ -17,6 +17,7 @@ import {
   datePickersCustomizations,
   treeViewCustomizations,
 } from '../theme/customizations';
+import GlobalAlertBanner from '../components/GlobalAlertBanner';
 
 const xThemeComponents = {
   ...chartsCustomizations,
@@ -26,8 +27,8 @@ const xThemeComponents = {
 };
 
 export default function AppShell() {
-   const [mobileOpen, setMobileOpen] = React.useState(false);
-   const toggleMobileMenu = () => setMobileOpen((v) => !v);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const toggleMobileMenu = () => setMobileOpen((v) => !v);
 
   return (
     <AppTheme themeComponents={xThemeComponents}>
@@ -35,6 +36,7 @@ export default function AppShell() {
       <Box sx={{ display: 'flex' }}>
         <SideMenu />
         <AppNavbar />
+        
         <Box
           component="main"
           sx={(theme) => ({
@@ -45,8 +47,11 @@ export default function AppShell() {
             overflow: 'auto',
           })}
         >
-          {/* Your protected page content renders here */}
-          <Outlet />
+          <SecondaryBar />
+          <GlobalAlertBanner />
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
+            <Outlet />
+          </Box>
         </Box>
       </Box>
     </AppTheme>

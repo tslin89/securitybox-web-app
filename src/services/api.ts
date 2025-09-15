@@ -3,6 +3,7 @@ var AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.ne
 
 if (window.location.hostname === 'localhost') {
   AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
+  //AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
 }
 
 // interface Transaction {
@@ -165,3 +166,28 @@ export async function ensurePushSubscribed(userId: number, jwt: string) {
 //     body: JSON.stringify({ userId, subscription: sub }),
 //   });
 // }
+
+export type DashboardOverview = {
+  summary: { totalBoxes: number; activeBoxes: number; openDoorsNow: number };
+  perDayCounts: Array<{ date: string; eventCode: string; count: number }>;
+  weightSeries: Array<{ date: string; avgWeight: number }>;
+  recentEvents: Array<{
+    id: number; timestamp: string; boxID: number; eventCode: string;
+    doorState: number; fingerprintNum: number | null; totalWeight: number | null; boxPosition: number | null;
+  }>;
+  countsSinceStart: Array<{ eventCode: string; total: number }>;
+  topBoxesIncidents: Array<{ boxID: number; eventCode: string; total: number }>;
+};
+
+export async function getDashboardOverview(
+  params: { days?: number; recent?: number; activeMinutes?: number } = {}
+): Promise<DashboardOverview> {
+  const q = new URLSearchParams();
+  if (params.days) q.set('days', String(params.days));
+  if (params.recent) q.set('recent', String(params.recent));
+  if (params.activeMinutes) q.set('activeMinutes', String(params.activeMinutes));
+
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL || ''}/dashboard/overview?${q.toString()}`);
+  if (!res.ok) throw new Error(`DashboardOverview failed: ${res.status}`);
+  return res.json();
+}

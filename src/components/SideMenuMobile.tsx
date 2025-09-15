@@ -94,10 +94,10 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
             <Avatar src={user?.avatarUrl} alt={user?.name || 'User'} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography variant="subtitle2" noWrap>
-                {user?.name || 'TS.Lin'}
+                {user?.name || 'Unknown'}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
-                {user?.email || 'tslin@gmail.com'}
+                {user?.email || '???@gmail.com'}
               </Typography>
             </Box>
             <Tooltip title="Account options">
@@ -116,7 +116,7 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
                 <ListItemIcon><PersonRoundedIcon fontSize="small" /></ListItemIcon>
                 <ListItemText>Profile</ListItemText>
               </MenuItem>
-              <MenuItem onClick={go('/account')}>
+              {/* <MenuItem onClick={go('/account')}>
                 <ListItemIcon><AccountCircleRoundedIcon fontSize="small" /></ListItemIcon>
                 <ListItemText>My account</ListItemText>
               </MenuItem>
@@ -127,11 +127,11 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
               <MenuItem onClick={go('/settings')}>
                 <ListItemIcon><SettingsRoundedIcon fontSize="small" /></ListItemIcon>
                 <ListItemText>Settings</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={doLogout}>
+              </MenuItem> */}
+              {/* <MenuItem onClick={doLogout}>
                 <ListItemIcon><LogoutRoundedIcon fontSize="small" /></ListItemIcon>
                 <ListItemText>Logout</ListItemText>
-              </MenuItem>
+              </MenuItem> */}
             </Menu>
           </Box>
         </Stack>
@@ -139,14 +139,15 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
         <Stack sx={{ flexGrow: 1 }}>
           <NavList items={mainNav} />
         </Stack>
+        <Divider />
         <Stack>
           <NavList items={secondaryNav as any} />
         </Stack>
-        {/* <Stack sx={{ p: 2 }}>
+        <Stack sx={{ p: 2 }}>
           <Button variant="outlined" fullWidth startIcon={<LogoutRoundedIcon />}>
             Logout
           </Button>
-        </Stack> */}
+        </Stack>
       </Stack>
     </Drawer>
   );

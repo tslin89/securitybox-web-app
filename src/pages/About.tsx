@@ -1,1 +1,1 @@
-export default function About(){ return <>About</>; }
+export default function About(){ return <>Brought to you by Team Winter @ AUT, 2025</>; }

@@ -91,7 +91,7 @@ export default function SideMenu() {
         {/* BRAND / PROJECT SWITCHER AREA (optional, keep template content here) */}
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-          <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 50, height: 'auto', margin: 1 }} />
+          <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 36, height: 'auto', margin: 1 }} />
           <Box>
             <Typography sx={{ fontWeight: 600 }}>
               Winter Security System
@@ -146,7 +146,7 @@ export default function SideMenu() {
               <ListItemIcon><PersonRoundedIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Profile</ListItemText>
             </MenuItem>
-            <MenuItem onClick={go('/account')}>
+            {/* <MenuItem onClick={go('/account')}>
               <ListItemIcon><AccountCircleRoundedIcon fontSize="small" /></ListItemIcon>
               <ListItemText>My account</ListItemText>
             </MenuItem>
@@ -157,7 +157,7 @@ export default function SideMenu() {
             <MenuItem onClick={go('/settings')}>
               <ListItemIcon><SettingsRoundedIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Settings</ListItemText>
-            </MenuItem>
+            </MenuItem> */}
             <MenuItem onClick={doLogout}>
               <ListItemIcon><LogoutRoundedIcon fontSize="small" /></ListItemIcon>
               <ListItemText>Logout</ListItemText>

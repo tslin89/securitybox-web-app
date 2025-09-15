@@ -1,93 +1,198 @@
+// pages/Dashboard.tsx (or MainGrid.tsx)
 import * as React from 'react';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
+import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid'; // or @mui/material/Grid
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
-import Copyright from '../internals/components/Copyright';
-import ChartUserByCountry from './ChartUserByCountry';
-import CustomizedTreeView from './CustomizedTreeView';
-import CustomizedDataGrid from './CustomizedDataGrid';
-import HighlightedCard from './HighlightedCard';
-import PageViewsBarChart from './PageViewsBarChart';
-import SessionsChart from './SessionsChart';
-import StatCard, { StatCardProps } from './StatCard';
+import Skeleton from '@mui/material/Skeleton';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import { BarChart, LineChart, PieChart } from '@mui/x-charts';
+import { getDashboardOverview } from '../services/api';
+import { EVENT_SETS, EVENT_LABELS } from '../constants/events';
+import { useSignalR } from '../contexts/SignalRContext';
 
-const data: StatCardProps[] = [
-  {
-    title: 'Users',
-    value: '14k',
-    interval: 'Last 30 days',
-    trend: 'up',
-    data: [
-      200, 24, 220, 260, 240, 380, 100, 240, 280, 240, 300, 340, 320, 360, 340, 380,
-      360, 400, 380, 420, 400, 640, 340, 460, 440, 480, 460, 600, 880, 920,
-    ],
-  },
-  {
-    title: 'Conversions',
-    value: '325',
-    interval: 'Last 30 days',
-    trend: 'down',
-    data: [
-      1640, 1250, 970, 1130, 1050, 900, 720, 1080, 900, 450, 920, 820, 840, 600, 820,
-      780, 800, 760, 380, 740, 660, 620, 840, 500, 520, 480, 400, 360, 300, 220,
-    ],
-  },
-  {
-    title: 'Event count',
-    value: '200k',
-    interval: 'Last 30 days',
-    trend: 'neutral',
-    data: [
-      500, 400, 510, 530, 520, 600, 530, 520, 510, 730, 520, 510, 530, 620, 510, 530,
-      520, 410, 530, 520, 610, 530, 520, 610, 530, 420, 510, 430, 520, 510,
-    ],
-  },
-];
+function StatCard({ title, value }: { title: string; value: number | string }) {
+  return (
+    <Card><CardContent>
+      <Typography variant="overline" color="text.secondary">{title}</Typography>
+      <Typography variant="h5" sx={{ mt: 0.5 }}>{value}</Typography>
+    </CardContent></Card>
+  );
+}
 
 export default function MainGrid() {
+  const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
+  const [data, setData] = React.useState<Awaited<ReturnType<typeof getDashboardOverview>> | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
+  const [updateAvailable, setUpdateAvailable] = React.useState(false);
+
+  const fetchData = React.useCallback(async () => {
+    try {
+      const d = await getDashboardOverview({ days: 14, recent: 25, activeMinutes: 10 });
+      setData(d);
+      setLastUpdated(new Date());
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    }
+  }, []);
+
+  const handleRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchData();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchData]);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        await fetchData();
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [fetchData]);
+
+  if (loading || !data) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 2 }}>
+        <Skeleton variant="rounded" height={80} sx={{ mb: 2 }} />
+        <Skeleton variant="rounded" height={320} sx={{ mb: 2 }} />
+        <Skeleton variant="rounded" height={320} />
+      </Container>
+    );
+  }
+
+  const { summary, perDayCounts, weightSeries, countsSinceStart } = data;
+
+  // normalize casing from the API (camelCase vs PascalCase)
+  const pdc = (perDayCounts as any[]).map(r => ({
+    date: r.date ?? r.Date,
+    eventCode: r.eventCode ?? r.EventCode,
+    count: r.count ?? r.Count,
+  }));
+
+  const counts = (countsSinceStart as any[]).map(r => ({
+    eventCode: r.eventCode ?? r.EventCode,
+    total: r.total ?? r.Total,
+  }));
+
+
+  // Utilities to bucket by your front-end definitions
+  const sumCodes = (codes: string[]) =>
+    countsSinceStart.filter(x => codes.includes(x.eventCode)).reduce((a, b) => a + b.total, 0);
+
+  // Derive chart series
+  const byDate: Record<string, Record<string, number>> = {};
+  perDayCounts.forEach(({ date, eventCode, count }) => {
+    if (!byDate[date]) byDate[date] = {};
+    byDate[date][eventCode] = count;
+  });
+  const xDates = Object.keys(byDate).sort(); // YYYY-MM-DD strings
+  const deliveriesSeries = xDates.map(d => EVENT_SETS.deliveries.reduce((acc, c) => acc + (byDate[d][c] || 0), 0));
+  const incidentsParcelSeries = xDates.map(d => (byDate[d]['C007'] || 0));
+  const incidentsBoxSeries = xDates.map(d => (byDate[d]['C009'] || 0));
+
+  // Pie: event mix (last N days)
+  const pieData = Object.entries(
+    countsSinceStart.reduce((m, x) => { m[x.eventCode] = (m[x.eventCode] ?? 0) + x.total; return m; }, {} as Record<string, number>)
+  ).map(([code, total]) => ({ label: `${code} ${EVENT_LABELS[code] ?? ''}`, value: total }));
+
   return (
-    <Box sx={{ width: '100%', maxWidth: { sm: '100%', md: '1700px' } }}>
-      {/* cards */}
-      <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Overview
-      </Typography>
-      <Grid
-        container
-        spacing={2}
-        columns={12}
-        sx={{ mb: (theme) => theme.spacing(2) }}
-      >
-        {data.map((card, index) => (
-          <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
-            <StatCard {...card} />
-          </Grid>
-        ))}
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <HighlightedCard />
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
+      {/* Header with refresh button */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" component="h1">Dashboard</Typography>
+          {lastUpdated && (
+            <Typography variant="body2" color="text.secondary">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </Typography>
+          )}
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={handleRefresh}
+          disabled={refreshing}
+          sx={{ minWidth: 120 }}
+        >
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </Box>
+
+      {/* Top stats */}
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}><StatCard title="Total Boxes" value={summary.totalBoxes} /></Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}><StatCard title="Active Boxes" value={summary.activeBoxes} /></Grid>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard title="Deliveries (14d)" value={sumCodes(EVENT_SETS.deliveries)} />
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <SessionsChart />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <PageViewsBarChart />
-        </Grid>
-      </Grid>
-      <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Details
-      </Typography>
-      <Grid container spacing={2} columns={12}>
-        <Grid size={{ xs: 12, lg: 9 }}>
-          <CustomizedDataGrid />
-        </Grid>
-        <Grid size={{ xs: 12, lg: 3 }}>
-          <Stack gap={2} direction={{ xs: 'column', sm: 'row', lg: 'column' }}>
-            <CustomizedTreeView />
-            <ChartUserByCountry />
-          </Stack>
+        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+          <StatCard title="Incidents (14d)" value={sumCodes(EVENT_SETS.incidents)} />
         </Grid>
       </Grid>
-      <Copyright sx={{ my: 4 }} />
-    </Box>
+
+      {/* Deliveries bar */}
+      <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card><CardContent>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Deliveries (last 14 days)</Typography>
+            <BarChart
+              height={280}
+              xAxis={[{ scaleType: 'band', data: xDates }]}
+              series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
+            />
+          </CardContent></Card>
+        </Grid>
+
+        {/* Incidents stacked */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card><CardContent>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Incidents (last 14 days)</Typography>
+            <BarChart
+              height={280}
+              xAxis={[{ scaleType: 'band', data: xDates }]}
+              series={[
+                { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc' },
+                { data: incidentsBoxSeries, label: 'Box stolen (C009)', stack: 'inc' },
+              ]}
+            />
+          </CardContent></Card>
+        </Grid>
+
+        {/* Weight trend */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Card><CardContent>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Average Weight (last 14 days)</Typography>
+            <LineChart
+              height={280}
+              xAxis={[{
+                scaleType: 'point', data: weightSeries.map(x => {
+                  const d = new Date(x.date);
+                  return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                })
+              }]}
+              series={[{ data: weightSeries.map(x => x.avgWeight), label: 'Avg weight (g)', area: true }]}
+            />
+          </CardContent></Card>
+        </Grid>
+
+        {/* Event mix */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Card><CardContent>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Event mix (last 14 days)</Typography>
+            <PieChart height={280} series={[{ data: pieData }]} />
+          </CardContent></Card>
+        </Grid>
+      </Grid>
+    </Container>
   );
 }

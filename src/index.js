@@ -11,6 +11,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import AppRoutes from './routes/AppRoutes.tsx'
 import { StyledEngineProvider } from '@mui/material/styles';
 import { BrowserRouter } from 'react-router-dom';
+import { AlertsProvider } from './alerts/AlertsProvider';
+
 
 if ('serviceWorker' in navigator) {
   // Cache-bust in dev so you always fetch the latest SW after edits
@@ -38,7 +40,9 @@ root.render(
       <AuthProvider>
         <SignalRProvider>
           <BrowserRouter>
-            <AppRoutes />
+            <AlertsProvider>
+              <AppRoutes />
+            </AlertsProvider>
           </BrowserRouter>
         </SignalRProvider>
       </AuthProvider>
