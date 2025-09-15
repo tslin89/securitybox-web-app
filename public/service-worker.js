@@ -3,7 +3,7 @@ self.addEventListener('push', (event) => {
     event.waitUntil((async () => {
         let title = 'SecurityBox Alert';
         let body = 'New alert';
-        let url = '/dashboard';
+        let url = '/translist';
 
         try {
             if (event.data) {
@@ -30,7 +30,7 @@ self.addEventListener('activate', () => { console.log('[SW] activate'); self.cli
 self.addEventListener("notificationclick", (event) => {
     console.log('Notification clicked')
     event.notification.close();
-    const url = event.notification.data?.url || "/dashboard";
+    const url = event.notification.data?.url || "/translist";
     event.waitUntil((async () => {
         const all = await clients.matchAll({ type: "window", includeUncontrolled: true });
         for (const client of all) {

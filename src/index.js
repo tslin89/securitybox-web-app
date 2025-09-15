@@ -1,14 +1,16 @@
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import './App.css';
-import Login from './pages/Login.tsx';
-import Dashboard from './pages/Dashboard.tsx';
 import { SignalRProvider } from './contexts/SignalRContext.tsx';
-import GlobalAlerts from './components/GlobalAlerts';
 import reportWebVitals from './reportWebVitals';
 import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import AppRoutes from './routes/AppRoutes.tsx'
+import { StyledEngineProvider } from '@mui/material/styles';
+import { BrowserRouter } from 'react-router-dom';
 
 if ('serviceWorker' in navigator) {
   // Cache-bust in dev so you always fetch the latest SW after edits
@@ -32,24 +34,15 @@ if ('serviceWorker' in navigator) {
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <SignalRProvider>
-        <Router>
-          <GlobalAlerts />
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-            />
-          </Routes>
-        </Router>
-      </SignalRProvider>
-    </AuthProvider>
+    <StyledEngineProvider injectFirst>
+      <AuthProvider>
+        <SignalRProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </SignalRProvider>
+      </AuthProvider>
+    </StyledEngineProvider>
   </React.StrictMode>
 );
 

@@ -65,7 +65,7 @@ const GlobalAlerts: React.FC = () => {
 
   const connectionStatusStyle = {
     position: 'fixed' as const,
-    top: '16px',
+    top: '50px',
     right: '22px',
     zIndex: 50,
     display: 'flex',

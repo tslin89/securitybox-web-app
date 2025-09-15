@@ -1,38 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UserLogin, ensurePushSubscribed } from '../services/api';
+import {
+  Box,
+  Container,
+  Paper,
+  TextField,
+  Typography,
+  Button,
+  InputAdornment,
+  IconButton,
+  Alert,
+  Avatar,
+  CircularProgress,
+} from '@mui/material';
+import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import { useNavigate } from 'react-router-dom';
+
+import { UserLogin, ensurePushSubscribed } from '../services/api';
 import { useSignalR } from '../contexts/SignalRContext';
 import { useAuth } from '../contexts/AuthContext';
 
-const Login = () => {
+const Login: React.FC = () => {
   const [email, setUseremail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login, isAuthenticated } = useAuth();
-
-  const { startConnection } = useSignalR();
   const emailRef = useRef<HTMLInputElement>(null);
+
+  const { login, isAuthenticated } = useAuth();
+  const { startConnection } = useSignalR();
   const navigate = useNavigate();
 
-  // Redirect to dashboard if already authenticated
+  // Redirect to translist if already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate('/translist', { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  // Autofocus email
   useEffect(() => {
-    if (emailRef.current) {
-      emailRef.current.focus();
-    }
+    emailRef.current?.focus();
   }, []);
-
-  const handlePasswordKeyPress = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Enter') {
-      handleLogin();
-    }
-  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -46,106 +58,165 @@ const Login = () => {
     try {
       const result = await UserLogin(email, password);
       if (result.status === 1) {
-
         const loginData = {
-          token: result.data?.token || 'dummy-token', 
+          token: result.data?.token || 'dummy-token',
           user: {
             id: result.data?.user?.userID || -1,
-            name: result.data?.user?.userName || "unknown",
-            email: result.data?.user?.email || "unknown"
+            name: result.data?.user?.userName || 'unknown',
+            email: result.data?.user?.email || 'unknown',
           },
-          expiresIn: result.expiresIn || 24 * 60 * 60 // 24 hours in seconds
+          expiresIn: result.expiresIn || 24 * 60 * 60, // seconds
         };
 
-        // Store auth data
+        // Save auth
         login(loginData);
 
-        // Start SignalR connection after successful login
+        // Start SignalR
         await startConnection();
 
-        // subscribe to push-notification
-        //await enablePush(loginData.user.id, loginData.token);
+        // Subscribe push
         await ensurePushSubscribed(loginData.user.id, loginData.token);
 
-        // Navigate to dashboard using React Router
-        navigate('/dashboard');
+        // Go to your first protected page
+        navigate('/translist', { replace: true });
+      } else {
+        setError('Login failed. Please check your credentials.');
       }
-
     } catch (err) {
-      setError('Login failed. Please check your credentials.');
       console.error('Login error:', err);
+      setError('Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    if (!isLoading) handleLogin();
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 login-container">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
+    <Box
+      sx={{
+        minHeight: '100svh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: (t) => t.palette.mode === 'light' ? 'grey.50' : 'background.default',
+        px: 2,
+      }}
+    >
+      <Container maxWidth="xs" disableGutters>
+        <Paper
+          elevation={6}
+          sx={{
+            maxWidth: 300,
+            p: { xs: 3, sm: 5 },
+            borderRadius: 3,
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 50, height: 'auto', marginBottom: 2 }} />
+            </Box>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 600 }}>
+              Winter Security System Login
+            </Typography>
 
-        <div className="mt-8 space-y-6">
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div className="login-input-row">
-              <label htmlFor="email" className="sr-only">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="text"
-                ref={emailRef}
-                required
-                className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setUseremail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
+            <Typography variant="body2" color="text.secondary">
+              
+            </Typography>
+          </Box>
 
-            <div className="login-input-row">
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                onKeyPress={handlePasswordKeyPress}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center login-error-message">
-              {error}
-            </div>
-          )}
-
-          <div className="login-button-row">
-            <button
-              type="button"
-              onClick={handleLogin}
+          <Box component="form" noValidate onSubmit={onSubmit}>
+            <TextField
+              inputRef={emailRef}
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              autoCapitalize="none"
+              value={email}
+              onChange={(e) => setUseremail(e.target.value)}
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <EmailRoundedIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="password"
+              label="Password"
+              name="password"
+              type={showPass ? 'text' : 'password'}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSubmit(e as any);
+              }}
+              disabled={isLoading}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockRoundedIcon />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPass ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPass((v) => !v)}
+                      edge="end"
+                    >
+                      {showPass ? <VisibilityOffRoundedIcon /> : <VisibilityRoundedIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={isLoading}
+              sx={{ mt: 3 }}
+              startIcon={isLoading ? <CircularProgress size={20} /> : null}
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+              {isLoading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </Box>
+        </Paper>
+
+        {/* Footer (optional) */}
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: 'block', textAlign: 'center', mt: 2 }}
+        >
+          © {new Date().getFullYear()} Team Winter, AUT
+        </Typography>
+      </Container>
+    </Box>
   );
 };
 
