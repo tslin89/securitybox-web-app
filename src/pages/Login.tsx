@@ -34,10 +34,10 @@ const Login: React.FC = () => {
   const { startConnection } = useSignalR();
   const navigate = useNavigate();
 
-  // Redirect to translist if already authenticated
+  // Redirect to dashboard if already authenticated
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      navigate('/translist', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, isLoading, navigate]);
 
@@ -78,7 +78,7 @@ const Login: React.FC = () => {
         await ensurePushSubscribed(loginData.user.id, loginData.token);
 
         // Go to your first protected page
-        navigate('/translist', { replace: true });
+        navigate('/dashboard', { replace: true });
       } else {
         setError('Login failed. Please check your credentials.');
       }
