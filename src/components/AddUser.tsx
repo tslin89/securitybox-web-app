@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { createUser, checkFingerprintStatus } from '../services/api';
+import { createUser, checkFingerprintStatus, startFingerprintOnDevice } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import {
   Box,
   Card,
@@ -14,8 +15,13 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  Stack
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 // Mock API function - replace with actual import
 // const createUser = async (userData: any) => {
@@ -35,6 +41,8 @@ interface AddUserProps {
 }
 
 const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
+  const theme = useTheme();
+  const { boxList } = useAuth();
   const [formData, setFormData] = useState({
     userName: '',
     email: '',
@@ -42,6 +50,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     password: '',
     confirmPassword: '',
     userType: 2,
+    boxID: 0,
     fingerprintEnabled: false,
     userEnabled: true
   });
@@ -51,24 +60,62 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
   const [showFingerprintPopover, setShowFingerprintPopover] = useState(false);
   const [fingerprintLoading, setFingerprintLoading] = useState(false);
   const [fingerprintSuccess, setFingerprintSuccess] = useState(false);
-  const [newUserId, setNewUserId] = useState<number | null>(null);
+  const [selectedBox, setSelectedBox] = useState<any>(null);
 
   const textFieldStyles = {
-    '& .MuiOutlinedInput-root': {
-      backgroundColor: 'white',
+    '& .MuiFilledInput-root': {
+      backgroundColor: theme.palette.mode === 'dark'
+        ? '#424242'  // Dark gray for dark mode
+        : theme.palette.background.paper,  // Light background for light mode
+      borderRadius: '8px',
+      border: `1px solid ${theme.palette.divider}`,
+      '&:before': {
+        borderBottom: 'none',
+      },
+      '&:after': {
+        borderBottom: 'none',
+      },
+      '&:hover:not(.Mui-disabled):before': {
+        borderBottom: 'none',
+      },
+      '&:hover': {
+        borderColor: theme.palette.primary.main,
+        backgroundColor: theme.palette.mode === 'dark'
+          ? '#616161'  // Slightly lighter on hover in dark mode
+          : theme.palette.background.paper,
+      },
+      '&.Mui-focused': {
+        borderColor: theme.palette.primary.main,
+        borderWidth: '1px',  // Keep same border width to prevent layout shift
+        backgroundColor: theme.palette.mode === 'dark'
+          ? '#616161'  // Slightly lighter when focused in dark mode
+          : theme.palette.background.paper,
+      },
     },
-    '& .MuiInputLabel-root': {
-      backgroundColor: 'white',
-      paddingLeft: '4px',
-      paddingRight: '4px',
-    }
+    '& .MuiFilledInput-underline:before': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:after': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:hover:not(.Mui-disabled):before': {
+      borderBottom: 'none',
+    },
+    // Additional selectors to override Material-UI's internal styling
+    '& .MuiFilledInput-input': {
+      backgroundColor: 'transparent',
+    },
+    '& .MuiInputBase-input': {
+      backgroundColor: 'transparent',
+    },
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+              (name === 'userType' || name === 'boxID') ? Number(value) : value
     }));
   };
 
@@ -79,6 +126,15 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     }));
   };
 
+  const handleBoxChange = (boxID: number) => {
+    const box = boxList.find(b => b.boxID === boxID);
+    setSelectedBox(box);
+    setFormData(prev => ({
+      ...prev,
+      boxID: boxID
+    }));
+  };
+
   const validateForm = () => {
     if (!formData.userName.trim()) return 'User Name is required';
     if (!formData.email.trim()) return 'Email is required';
@@ -86,6 +142,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     if (!formData.password.trim()) return 'Password is required';
     if (formData.password.length < 6) return 'Password must be at least 6 characters';
     if (formData.password !== formData.confirmPassword) return 'Passwords do not match';
+    if (formData.boxID === 0) return 'Please select a box';
     return null;
   };
 
@@ -107,11 +164,10 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
         phoneNo: formData.phoneNo || undefined,
         password: formData.password,
         userType: formData.userType,
+        boxID: formData.boxID,
         fingerprintEnabled: formData.fingerprintEnabled,
         userEnabled: formData.userEnabled
       });
-
-      setNewUserId(userID);
 
       if (formData.fingerprintEnabled) {
         setShowFingerprintPopover(true);
@@ -130,6 +186,16 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     setFingerprintLoading(true);
 
     console.log('Sending fingerprint setup signal to IoT device for user:', userId);
+
+    // Start fingerprint setup
+    try {
+      await startFingerprintOnDevice(selectedBox?.deviceID || "demo-device-raspberrypi", userId);
+    } catch (err) {
+      console.error('Error starting fingerprint setup:', err);
+      setFingerprintLoading(false);
+      setError('Failed to start fingerprint setup. Please try again.');
+      return;
+    }
 
     // Simulate periodic checking for fingerprint registration
     const checkInterval = setInterval(async () => {
@@ -162,10 +228,10 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <>
-      <Box sx={{ 
-        padding: { xs: 2, sm: 3 }, 
-        maxWidth: { xs: '100%', sm: 600 }, 
-        margin: '0 auto' 
+      <Box sx={{
+        padding: { xs: 2, sm: 3 },
+        maxWidth: { xs: '100%', sm: 600 },
+        margin: '0 auto'
       }}>
         <Card sx={{ boxShadow: 2 }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
@@ -180,11 +246,58 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
             )}
 
             <Box component="form" onSubmit={handleSubmit}>
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, 
-                gap: 2, 
-                mb: 2 
+              {/* Box Selection - Top Row */}
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
+                mb: 2
+              }}>
+                <FormControl fullWidth variant="filled" sx={textFieldStyles}>
+                  <InputLabel>Select Box</InputLabel>
+                  <Select
+                    value={formData.boxID}
+                    onChange={(e) => handleBoxChange(Number(e.target.value))}
+                    label="Select Box"
+                  >
+                    <MenuItem value={0}>
+                      <em>Please select a box</em>
+                    </MenuItem>
+                    {boxList.map((box) => (
+                      <MenuItem key={box.boxID} value={box.boxID}>
+                        {box.description}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {selectedBox && (
+                  <TextField
+                    fullWidth
+                    label="Device ID"
+                    value={selectedBox.deviceID}
+                    variant="filled"
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    sx={{
+                      ...textFieldStyles,
+                      '& .MuiFilledInput-root': {
+                        ...textFieldStyles['& .MuiFilledInput-root'],
+                        backgroundColor: theme.palette.mode === 'dark' 
+                          ? '#2e2e2e'  // Darker background for read-only
+                          : '#f5f5f5', // Light gray background for read-only
+                        cursor: 'default',
+                      },
+                    }}
+                  />
+                )}
+              </Box>
+
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
+                mb: 2
               }}>
                 <TextField
                   fullWidth
@@ -193,7 +306,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   value={formData.userName}
                   onChange={handleInputChange}
                   required
-                  variant="outlined"
+                  variant="filled"
                   sx={textFieldStyles}
                 />
                 <TextField
@@ -204,7 +317,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  variant="outlined"
+                  variant="filled"
                   sx={textFieldStyles}
                 />
               </Box>
@@ -217,16 +330,16 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   type="tel"
                   value={formData.phoneNo}
                   onChange={handleInputChange}
-                  variant="outlined"
+                  variant="filled"
                   sx={textFieldStyles}
                 />
               </Box>
 
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, 
-                gap: 2, 
-                mb: 2 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
+                mb: 2
               }}>
                 <TextField
                   fullWidth
@@ -236,7 +349,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  variant="outlined"
+                  variant="filled"
                   sx={textFieldStyles}
                 />
                 <TextField
@@ -247,16 +360,16 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   required
-                  variant="outlined"
+                  variant="filled"
                   sx={textFieldStyles}
                 />
               </Box>
 
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', sm: '1fr' }, 
-                gap: 2, 
-                mb: 2 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr' },
+                gap: 2,
+                mb: 2
               }}>
                 <TextField
                   fullWidth
@@ -265,7 +378,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   name="userType"
                   value={formData.userType}
                   onChange={handleInputChange}
-                  variant="outlined"
+                  variant="filled"
                   sx={textFieldStyles}
                   SelectProps={{
                     native: true,
@@ -276,11 +389,12 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                 </TextField>
               </Box>
 
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, 
-                gap: 2, 
-                mb: 2 
+
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                gap: 2,
+                mb: 2
               }}>
                 <FormControlLabel
                   control={
@@ -304,17 +418,17 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                 />
               </Box>
 
-              <Stack 
-                direction={{ xs: 'column', sm: 'row' }} 
-                spacing={2} 
-                justifyContent="flex-end" 
-                sx={{ mt: 3 }}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                justifyContent="flex-end"
+                sx={{ mt: 3, mb: 3 }}
               >
                 <Button
                   variant="outlined"
                   onClick={onCancel}
                   disabled={loading}
-                  sx={{ 
+                  sx={{
                     width: { xs: '100%', sm: 'auto' }
                   }}
                 >
@@ -325,7 +439,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   variant="contained"
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={20} /> : null}
-                  sx={{ 
+                  sx={{
                     width: { xs: '100%', sm: 'auto' }
                   }}
                 >

@@ -1,6 +1,6 @@
-import { updateUser, getUser, checkFingerprintStatus, startFingerprintOnDevice } from '../services/api';
-import React, { useState, useEffect } from 'react';
-import { useFingerprintSetup } from "../hooks/useFingerprintSetup";
+import { updateUser, getUser, checkFingerprintStatus, startFingerprintOnDevice, deleteUser } from '../services/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 import {
   Box,
@@ -17,8 +17,14 @@ import {
   DialogTitle,
   DialogContent,
   Stack,
-  Chip
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useTheme } from '@mui/material/styles';
 
 // Mock API functions - replace with actual imports
 // const getUser = async (userId: number) => {
@@ -51,6 +57,7 @@ interface User {
   email: string;
   phoneNo?: string;
   userType: number;
+  boxID?: number;
   fingerprintNum?: number;
   fingerprintEnabled?: boolean;
   userEnabled?: boolean;
@@ -63,6 +70,8 @@ interface UpdateUserProps {
 }
 
 const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) => {
+  const theme = useTheme();
+  const { user: currentUser, boxList } = useAuth();
 
   const [formData, setFormData] = useState({
     userName: '',
@@ -71,6 +80,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     password: '',
     confirmPassword: '',
     userType: 2,
+    boxID: 0,
     fingerprintEnabled: false,
     userEnabled: true
   });
@@ -83,27 +93,69 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
   const [showFingerprintPopover, setShowFingerprintPopover] = useState(false);
   const [fingerprintLoading, setFingerprintLoading] = useState(false);
   const [fingerprintSuccess, setFingerprintSuccess] = useState(false);
+  const [selectedBox, setSelectedBox] = useState<any>(null);
+
+  // Check if current user is trying to delete themselves
+  const isCurrentUser = currentUser && currentUser.userID === userId;
 
   const textFieldStyles = {
-    '& .MuiOutlinedInput-root': {
-      backgroundColor: 'white',
+    '& .MuiFilledInput-root': {
+      backgroundColor: theme.palette.mode === 'dark' 
+        ? '#424242'  // Dark gray for dark mode
+        : theme.palette.background.paper,  // Light background for light mode
+      borderRadius: '8px',
+      border: `1px solid ${theme.palette.divider}`,
+      '&:before': {
+        borderBottom: 'none',
+      },
+      '&:after': {
+        borderBottom: 'none',
+      },
+      '&:hover:not(.Mui-disabled):before': {
+        borderBottom: 'none',
+      },
+      '&:hover': {
+        borderColor: theme.palette.primary.main,
+        backgroundColor: theme.palette.mode === 'dark' 
+          ? '#616161'  // Slightly lighter on hover in dark mode
+          : theme.palette.background.paper,
+      },
+      '&.Mui-focused': {
+        borderColor: theme.palette.primary.main,
+        borderWidth: '1px',  // Keep same border width to prevent layout shift
+        backgroundColor: theme.palette.mode === 'dark'
+          ? '#616161'  // Slightly lighter when focused in dark mode
+          : theme.palette.background.paper,
+      },
     },
-    '& .MuiInputLabel-root': {
-      backgroundColor: 'white',
-      paddingLeft: '4px',
-      paddingRight: '4px',
-    }
+    '& .MuiFilledInput-underline:before': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:after': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:hover:not(.Mui-disabled):before': {
+      borderBottom: 'none',
+    },
+    // Additional selectors to override Material-UI's internal styling
+    '& .MuiFilledInput-input': {
+      backgroundColor: 'transparent',
+    },
+    '& .MuiInputBase-input': {
+      backgroundColor: 'transparent',
+    },
   };
 
-  useEffect(() => {
-    loadUser();
-  }, [userId]);
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     try {
       setLoadingUser(true);
       const user = await getUser(userId);
       setOriginalUser(user);
+      
+      // Find the box for this user
+      const userBox = boxList.find(b => b.boxID === (user as any).boxID);
+      setSelectedBox(userBox);
+      
       setFormData({
         userName: user.userName,
         email: user.email,
@@ -111,6 +163,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         password: '',
         confirmPassword: '',
         userType: user.userType,
+        boxID: (user as any).boxID || 0,
         fingerprintEnabled: user.fingerprintEnabled || false,
         userEnabled: user.userEnabled || true
       });
@@ -119,13 +172,18 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     } finally {
       setLoadingUser(false);
     }
-  };
+  }, [userId, boxList]);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+              (name === 'userType' || name === 'boxID') ? Number(value) : value
     }));
   };
 
@@ -136,10 +194,20 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     }));
   };
 
+  const handleBoxChange = (boxID: number) => {
+    const box = boxList.find(b => b.boxID === boxID);
+    setSelectedBox(box);
+    setFormData(prev => ({
+      ...prev,
+      boxID: boxID
+    }));
+  };
+
   const validateForm = () => {
     if (!formData.userName.trim()) return 'User Name is required';
     if (!formData.email.trim()) return 'Email is required';
     if (!/\S+@\S+\.\S+/.test(formData.email)) return 'Invalid email format';
+    if (formData.boxID === 0) return 'Please select a box';
     if (changePassword) {
       if (!formData.password.trim()) return 'Password is required';
       if (formData.password.length < 6) return 'Password must be at least 6 characters';
@@ -168,6 +236,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         email: formData.email,
         phoneNo: formData.phoneNo || undefined,
         userType: formData.userType,
+        boxID: formData.boxID,
         fingerprintEnabled: formData.fingerprintEnabled,
         userEnabled: formData.userEnabled
       };
@@ -195,6 +264,30 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     }
   };
 
+  const handleDelete = async () => {
+    if (!originalUser || originalUser.fingerprintNum === undefined) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete user "${originalUser.userName}"? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await deleteUser(originalUser.userID, originalUser.fingerprintNum);
+      
+      // Call onSuccess to close the dialog and refresh the list
+      onSuccess?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startFingerprintSetup = async () => {
     setFingerprintLoading(true);
 
@@ -202,7 +295,14 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     console.log('Sending fingerprint setup signal to IoT device for user:', userId);
 
     // Start fingerprint setup
-    startFingerprintOnDevice("demo-device-raspberrypi", userId)
+    try {
+      await startFingerprintOnDevice(selectedBox?.deviceID || "demo-device-raspberrypi", userId);
+    } catch (err) {
+      console.error('Error starting fingerprint setup:', err);
+      setFingerprintLoading(false);
+      setError('Failed to start fingerprint setup. Please try again.');
+      return;
+    }
 
     // Simulate periodic checking for fingerprint registration
     const checkInterval = setInterval(async () => {
@@ -260,32 +360,80 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
             )}
 
             <Box>
-              <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
+              {/* Box Selection - Top Row */}
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+                gap: 2, 
+                mb: 2,
+              }}>
+                <FormControl fullWidth variant="filled" sx={textFieldStyles}>
+                  <InputLabel>Select Box</InputLabel>
+                  <Select
+                    value={formData.boxID}
+                    onChange={(e) => handleBoxChange(Number(e.target.value))}
+                    label="Select Box"
+                  >
+                    <MenuItem value={0}>
+                      <em>Please select a box</em>
+                    </MenuItem>
+                    {boxList.map((box) => (
+                      <MenuItem key={box.boxID} value={box.boxID}>
+                        {box.description}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {selectedBox && (
                   <TextField
                     fullWidth
-                    label="User Name"
-                    name="userName"
-                    value={formData.userName}
-                    onChange={handleInputChange}
-                    required
-                    variant="outlined"
-                    sx={textFieldStyles}
+                    label="Device ID"
+                    value={selectedBox.deviceID}
+                    variant="filled"
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    sx={{
+                      ...textFieldStyles,
+                      '& .MuiFilledInput-root': {
+                        ...textFieldStyles['& .MuiFilledInput-root'],
+                        backgroundColor: theme.palette.mode === 'dark' 
+                          ? '#2e2e2e'  // Darker background for read-only
+                          : '#f5f5f5', // Light gray background for read-only
+                        cursor: 'default',
+                      },
+                    }}
                   />
-                </Box>
-                <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                  <TextField
-                    fullWidth
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    variant="outlined"
-                    sx={textFieldStyles}
-                  />
-                </Box>
+                )}
+              </Box>
+
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+                gap: 2, 
+                mb: 2,
+              }}>
+                <TextField
+                  fullWidth
+                  label="User Name"
+                  name="userName"
+                  value={formData.userName}
+                  onChange={handleInputChange}
+                  required
+                  variant="filled"
+                  sx={textFieldStyles}
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  variant="filled"
+                  sx={textFieldStyles}
+                />
               </Box>
 
               <TextField
@@ -295,7 +443,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 type="tel"
                 value={formData.phoneNo}
                 onChange={handleInputChange}
-                variant="outlined"
+                variant="filled"
                 sx={{ mb: 2, ...textFieldStyles }}
               />
 
@@ -312,33 +460,34 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               />
 
               {changePassword && (
-                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <TextField
-                      fullWidth
-                      label="New Password"
-                      name="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      variant="outlined"
-                      sx={textFieldStyles}
-                    />
-                  </Box>
-                  <Box sx={{ flex: '1 1 300px', minWidth: '250px' }}>
-                    <TextField
-                      fullWidth
-                      label="Confirm New Password"
-                      name="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      required
-                      variant="outlined"
-                      sx={textFieldStyles}
-                    />
-                  </Box>
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+                  gap: 2, 
+                  mb: 2 
+                }}>
+                  <TextField
+                    fullWidth
+                    label="New Password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    variant="filled"
+                    sx={textFieldStyles}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Confirm New Password"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    variant="filled"
+                    sx={textFieldStyles}
+                  />
                 </Box>
               )}
 
@@ -349,7 +498,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 name="userType"
                 value={formData.userType}
                 onChange={handleInputChange}
-                variant="outlined"
+                variant="filled"
                 sx={{ mb: 2, ...textFieldStyles }}
                 SelectProps={{
                   native: true,
@@ -358,6 +507,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 <option value={1}>Admin</option>
                 <option value={2}>User</option>
               </TextField>
+
 
               <FormControlLabel
                 control={
@@ -401,22 +551,41 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 sx={{ mb: 2 }}
               />
 
-              <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
-                <Button
-                  variant="outlined"
-                  onClick={onCancel}
-                  disabled={loading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} /> : null}
-                >
-                  {loading ? 'Updating...' : 'Update User'}
-                </Button>
+              <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3, mb: 3 }}>
+                {!isCurrentUser && (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDelete}
+                    disabled={loading}
+                    sx={{ 
+                      backgroundColor: '#d32f2f',
+                      '&:hover': {
+                        backgroundColor: '#b71c1c',
+                      }
+                    }}
+                  >
+                    {loading ? 'Deleting...' : 'Delete User'}
+                  </Button>
+                )}
+                <Stack direction="row" spacing={2} sx={{ ml: isCurrentUser ? 0 : 'auto' }}>
+                  <Button
+                    variant="outlined"
+                    onClick={onCancel}
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    startIcon={loading ? <CircularProgress size={20} /> : null}
+                  >
+                    {loading ? 'Updating...' : 'Update User'}
+                  </Button>
+                </Stack>
               </Stack>
             </Box>
           </CardContent>

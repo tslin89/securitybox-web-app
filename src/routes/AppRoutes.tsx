@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import GlobalAlerts from '../components/GlobalAlerts';
+//import GlobalAlerts from '../components/GlobalAlerts';
 import TransactionList from '../pages/TransactionList';
 import Login from '../pages/Login';
 import ProtectedRoute from './ProtectedRoute';
@@ -30,7 +30,7 @@ function AuthAwareCatchAll() {
 export default function AppRoutes() {
   return (
     <>
-      <GlobalAlerts />
+      {/* <GlobalAlerts /> */}
       <Routes>
         {/* Public login at BOTH / and /login */}
         <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />

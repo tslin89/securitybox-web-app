@@ -6,10 +6,10 @@ import Drawer, { drawerClasses } from '@mui/material/Drawer';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
-import MenuButton from './MenuButton';
-import MenuContent from './MenuContent';
-import CardAlert from './CardAlert';
+// import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
+// import MenuButton from './MenuButton';
+// import MenuContent from './MenuContent';
+// import CardAlert from './CardAlert';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -23,9 +23,9 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
-import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
-import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
-import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+// import AccountCircleRoundedIcon from '@mui/icons-material/AccountCircleRounded';
+// import PersonAddAlt1RoundedIcon from '@mui/icons-material/PersonAddAlt1Rounded';
+// import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 
@@ -61,13 +61,14 @@ function NavList({ items }: { items: typeof mainNav }) {
 }
 
 export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobileProps) {
-  const { user, logout } = useAuth() as any;
+  const { user } = useAuth() as any;
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const navigate = useNavigate();
+  
   const handleMenu = (e: React.MouseEvent<HTMLElement>) => setMenuEl(e.currentTarget);
   const handleClose = () => setMenuEl(null);
   const go = (path: string) => () => { handleClose(); navigate(path); };
-  const doLogout = () => { handleClose(); logout?.(); navigate('/'); };
+  // const doLogout = () => { handleClose(); logout?.(); navigate('/'); };
 
   return (
     <Drawer

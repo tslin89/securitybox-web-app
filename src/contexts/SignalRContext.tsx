@@ -3,6 +3,10 @@ import React, { createContext, useContext, useEffect, useState, useCallback, Rea
 import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr';
 import { initiateSignalR } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlerts } from '../alerts/AlertsProvider';
+import { EVENT_SETS } from '../constants/events';
+
+type Status = 'connected' | 'connecting' | 'disconnected' | 'error';
 
 interface AlertData {
     id: string;
@@ -13,11 +17,10 @@ interface AlertData {
 
 interface SignalRContextType {
     connection: HubConnection | null;
+    status: Status;
+    lastError?: string;
     isConnected: boolean;
     connectionState: string;
-    alerts: AlertData[];
-    clearAlert: (id: string) => void;
-    clearAllAlerts: () => void;
     onTransactionUpdate: (callback: () => void) => void;
     offTransactionUpdate: (callback: () => void) => void;
     startConnection: () => Promise<void>;
@@ -35,22 +38,29 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     const [connection, setConnection] = useState<HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [connectionState, setConnectionState] = useState('Disconnected');
-    const [alerts, setAlerts] = useState<AlertData[]>([]);
+    // Removed internal alerts state - using AlertsProvider instead
     const [transactionUpdateCallbacks, setTransactionUpdateCallbacks] = useState<Set<() => void>>(new Set());
     const { isAuthenticated } = useAuth();
+    const { push } = useAlerts();
+    const [status, setStatus] = useState<Status>('disconnected');
+    const [lastError, setLastError] = useState<string | undefined>(undefined);
 
-    useEffect(() => {
-        // If user is authenticated and we’re not connected/connecting, start SignalR
-        if (isAuthenticated && (!connection || connection.state === HubConnectionState.Disconnected)) {
-            startConnection().catch(() => /* already handled by startConnection */ { });
+    const setFromHubState = (state: HubConnectionState) => {
+        switch (state) {
+            case HubConnectionState.Connected:
+                setStatus('connected');
+                setLastError(undefined);
+                break;
+            case HubConnectionState.Connecting:
+            case HubConnectionState.Reconnecting:
+                setStatus('connecting');
+                break;
+            case HubConnectionState.Disconnected:
+            default:
+                setStatus('disconnected');
+                break;
         }
-        // Optional: if you want to stop when user logs out:
-        if (!isAuthenticated && connection) {
-            stopConnection();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAuthenticated]); // we intentionally don't depend on connection/start/stop to avoid loops
-
+    };
 
     // Refs for tracking reconnection attempts
     const reconnectAttempts = useRef(0);
@@ -61,31 +71,45 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     const startRef = useRef<() => Promise<void>>(() => Promise.resolve());
     const reconnectRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-    const addAlert = useCallback((message: string, type: AlertData['type'] = 'info') => {
-        const newAlert: AlertData = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    const addAlert = useCallback((message: string, type: AlertData['type'] = 'info', isIncident: boolean = false) => {
+        const alertId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        const timestamp = Date.now();
+        
+        console.log(`🚨 Alert: [${type.toUpperCase()}] ${message} (Incident: ${isIncident})`);
+        
+        // Push to AlertsProvider instead of internal state
+        push({
+            id: alertId,
             message,
-            timestamp: new Date(),
-            type
+            severity: type,
+            persistent: isIncident, // Incidents are persistent (won't auto-dismiss in toast)
+            timestamp: timestamp
+        });
+    }, [push]);
+
+    useEffect(() => {
+        if (!connection) return;
+
+        connection?.onclose((err) => {
+            setFromHubState(HubConnectionState.Disconnected);
+            if (err) setLastError(err.message);
+        });
+        connection?.onreconnecting(() => setFromHubState(HubConnectionState.Reconnecting));
+        connection?.onreconnected(() => setFromHubState(HubConnectionState.Connected));
+
+        // Handle incoming messages and add to AlertsProvider
+        // Adjust event names/shape to your server:
+        connection?.on('Alert', (payload: { id?: string; message: string; type?: 'info' | 'warning' | 'error' | 'success'; persistent?: boolean; }) => {
+            addAlert(payload.message, payload.type ?? 'info');
+        });
+
+        // Cleanup function to remove event listeners
+        return () => {
+            connection?.off('Alert');
         };
+    }, [connection, addAlert]); // Include connection and addAlert in dependencies
 
-        console.log(`🚨 Alert: [${type.toUpperCase()}] ${message}`);
-        setAlerts(prev => [newAlert, ...prev.slice(0, 4)]);
-
-        if (type !== 'error') {
-            setTimeout(() => {
-                setAlerts(prev => prev.filter(alert => alert.id !== newAlert.id));
-            }, 5000);
-        }
-    }, []);
-
-    const clearAlert = useCallback((id: string) => {
-        setAlerts(prev => prev.filter(alert => alert.id !== id));
-    }, []);
-
-    const clearAllAlerts = useCallback(() => {
-        setAlerts([]);
-    }, []);
+    // Removed clearAlert and clearAllAlerts - using AlertsProvider instead
 
     const onTransactionUpdate = useCallback((callback: () => void) => {
         setTransactionUpdateCallbacks(prev => {
@@ -107,9 +131,16 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         transactionUpdateCallbacks.forEach(callback => callback());
     }, [transactionUpdateCallbacks]);
 
+    // Use a ref to avoid dependency issues
+    const triggerTransactionUpdateRef = useRef(triggerTransactionUpdate);
+    triggerTransactionUpdateRef.current = triggerTransactionUpdate;
+
     // Enhanced connection state monitoring
     const updateConnectionState = useCallback((newConnection: HubConnection | null) => {
+        console.log('🔄 updateConnectionState called with:', newConnection?.state || 'null');
+        
         if (!newConnection) {
+            console.log('🔌 Setting state to Disconnected (no connection)');
             setConnectionState('Disconnected');
             setIsConnected(false);
             return;
@@ -117,57 +148,62 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
         const state = newConnection.state;
         let stateString = '';
+        let connected = false;
 
         switch (state) {
             case HubConnectionState.Disconnected:
                 stateString = 'Disconnected';
-                setIsConnected(false);
+                connected = false;
                 break;
             case HubConnectionState.Connecting:
                 stateString = 'Connecting';
-                setIsConnected(false);
+                connected = false;
                 break;
             case HubConnectionState.Connected:
                 stateString = 'Connected';
-                setIsConnected(true);
+                connected = true;
                 reconnectAttempts.current = 0; // Reset on successful connection
                 lastHeartbeat.current = new Date();
                 break;
             case HubConnectionState.Disconnecting:
                 stateString = 'Disconnecting';
-                setIsConnected(false);
+                connected = false;
                 break;
             case HubConnectionState.Reconnecting:
                 stateString = 'Reconnecting';
-                setIsConnected(false);
+                connected = false;
                 break;
         }
 
+        console.log(`🔌 Updating SignalR State: ${stateString}, Connected: ${connected}`);
         setConnectionState(stateString);
-        console.log(`🔌 SignalR State: ${stateString}`);
+        setIsConnected(connected);
     }, []);
 
-    const forceReconnect = useCallback(async (): Promise<void> => {
-        console.log('🔄 Force reconnecting SignalR...');
+    // Use a ref to avoid dependency issues
+    const updateConnectionStateRef = useRef(updateConnectionState);
+    updateConnectionStateRef.current = updateConnectionState;
 
-        if (connection) {
-            try {
-                await connection.stop();
-            } catch (error) {
-                console.error('Error stopping connection during force reconnect:', error);
+    const forceReconnect = useCallback(async () => {
+        try {
+            setStatus('connecting');
+            setLastError(undefined);
+            // if you keep a builder, stop old then start new:
+            if (connection) {
+                await connection.stop().catch(() => { });
             }
+            // (Re)create + start connection using your existing logic
+            // await newConnection.start();
+            setStatus('connected');
+        } catch (e: any) {
+            setStatus('error');
+            setLastError(e?.message ?? 'Reconnect failed');
+            // Use addAlert instead of push to avoid dependency issues
+            addAlert('SignalR reconnect failed', 'error', false);
         }
-
-        // Wait a bit before reconnecting
-        setTimeout(async () => {
-            try {
-                await startRef.current();
-            } catch (error) {
-                console.error('Error during force reconnect:', error);
-                addAlert('Force reconnection failed', 'error');
-            }
-        }, 1000);
     }, [connection, addAlert]);
+
+
 
     // Enhanced connection health monitoring
     const startConnectionHealthCheck = useCallback(() => {
@@ -182,7 +218,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             // If no heartbeat for 30 seconds and connection thinks it's connected
             if (timeSinceLastHeartbeat > 30000 && connection?.state === HubConnectionState.Connected) {
                 console.warn('🚨 Connection appears stale, forcing reconnect...');
-                addAlert('Connection appears stale, attempting to reconnect...', 'warning');
+                addAlert('Connection appears stale, attempting to reconnect...', 'warning', false);
                 reconnectRef.current();
             }
 
@@ -206,6 +242,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
         try {
             console.log('🚀 Starting SignalR connection...');
+            setStatus('connecting'); // Update status to connecting
 
             const response = await initiateSignalR();
 
@@ -250,9 +287,9 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                             msgType = 'warning';
                             break;
                         case "C007": // parcel stolen
-                            msg = "Parcel stolen"
+                            msg = "Parcel stolen";
                             msgType = "error";
-                            break
+                            break;
                         case "C009": // box stolen
                             msg = "Box stolen";
                             msgType = "error";
@@ -270,7 +307,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                             msgType = 'info';
                             break;
                         case "C001": // box opened
-                            msg = "Box opened"
+                            msg = "Box opened";
                             msgType = 'info';
                             break;
                         case "C002": // box closed
@@ -280,35 +317,38 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                         case "C006": // security reactivated
                             msg = "Security reactivated";
                             msgType = 'info';
-                            break
+                            break;
                     }
 
-                    addAlert(msg, msgType);
+                    // Check if this is an incident event (should not auto-dismiss)
+                    const isIncident = EVENT_SETS.incidents.includes(temp.EventCode);
+                    
+                    addAlert(msg, msgType, isIncident);
                 });
 
                 newConnection.on("transactionUpdate", (data: any) => {
                     console.log("📊 Transaction update received:", data);
                     lastHeartbeat.current = new Date(); // Update heartbeat
-                    addAlert("New transaction recorded", 'info');
+                    addAlert("New transaction recorded", 'info', false);
 
                     setTimeout(() => {
-                        triggerTransactionUpdate();
+                        triggerTransactionUpdateRef.current();
                     }, 1000);
                 });
 
                 newConnection.on("systemAlert", (data: { message: string, type: string }) => {
                     console.log("🎛️ System alert:", data);
                     lastHeartbeat.current = new Date(); // Update heartbeat
-                    addAlert(data.message, data.type as AlertData['type'] || 'info');
+                    addAlert(data.message, data.type as AlertData['type'] || 'info', false);
                 });
 
                 newConnection.on("deviceStatus", (data: any) => {
                     console.log("📱 Device status update:", data);
                     lastHeartbeat.current = new Date(); // Update heartbeat
                     if (data.status === 'offline') {
-                        addAlert(`Device ${data.deviceId} is offline`, 'error');
+                        addAlert(`Device ${data.deviceId} is offline`, 'error', false);
                     } else if (data.status === 'online') {
-                        addAlert(`Device ${data.deviceId} is back online`, 'success');
+                        addAlert(`Device ${data.deviceId} is back online`, 'success', false);
                     }
                 });
 
@@ -322,25 +362,25 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                 newConnection.onreconnecting((error) => {
                     reconnectAttempts.current++;
                     console.warn(`🔄 SignalR reconnecting (attempt ${reconnectAttempts.current})...`, error);
-                    updateConnectionState(newConnection);
-                    addAlert(`Connection lost, reconnecting... (attempt ${reconnectAttempts.current})`, 'warning');
+                    updateConnectionStateRef.current(newConnection);
+                    addAlert(`Connection lost, reconnecting... (attempt ${reconnectAttempts.current})`, 'warning', false);
                 });
 
                 newConnection.onreconnected((connectionId) => {
                     console.log(`✅ SignalR reconnected! Connection ID: ${connectionId}`);
-                    updateConnectionState(newConnection);
-                    addAlert("Connection restored successfully", 'success');
+                    updateConnectionStateRef.current(newConnection);
+                    addAlert("Connection restored successfully", 'success', false);
                     lastHeartbeat.current = new Date();
                 });
 
                 newConnection.onclose((error) => {
                     console.error('❌ SignalR connection closed:', error);
-                    updateConnectionState(newConnection);
+                    updateConnectionStateRef.current(newConnection);
 
                     if (reconnectAttempts.current >= maxReconnectAttempts.current) {
-                        addAlert("Connection failed after maximum retry attempts. Please refresh the page.", 'error');
+                        addAlert("Connection failed after maximum retry attempts. Please refresh the page.", 'error', false);
                     } else if (error) {
-                        addAlert(`Connection closed: ${error.message}`, 'error');
+                        addAlert(`Connection closed: ${error.message}`, 'error', false);
                         // Attempt manual reconnect after a delay
                         setTimeout(() => {
                             console.log('🔄 Attempting manual reconnect after connection close...');
@@ -353,8 +393,9 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                 console.log('✅ SignalR connection established');
 
                 setConnection(newConnection);
-                updateConnectionState(newConnection);
-                addAlert("Real-time connection established", 'success');
+                updateConnectionStateRef.current(newConnection);
+                setStatus('connected'); // Update status to connected
+                addAlert("Real-time connection established", 'success', false);
 
                 // Start health monitoring
                 startConnectionHealthCheck();
@@ -366,8 +407,9 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             const errorMessage = error instanceof Error ? error.message : 'Unknown connection error';
             console.error('❌ SignalR connection failed:', error);
             setConnection(null);
-            updateConnectionState(null);
-            addAlert(`Connection failed: ${errorMessage}`, 'error');
+            updateConnectionStateRef.current(null);
+            setStatus('error'); // Update status to error
+            addAlert(`Connection failed: ${errorMessage}`, 'error', false);
 
             // Retry after delay if not too many attempts
             if (reconnectAttempts.current < maxReconnectAttempts.current) {
@@ -379,7 +421,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
             throw error;
         }
-    }, [connection, addAlert, triggerTransactionUpdate, updateConnectionState, startConnectionHealthCheck]);
+    }, [connection, addAlert, startConnectionHealthCheck]); // Added missing dependencies
 
     const stopConnection = useCallback(async (): Promise<void> => {
         if (connectionCheckInterval.current) {
@@ -392,13 +434,13 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                 await connection.stop();
                 console.log('🔌 SignalR connection stopped');
                 setConnection(null);
-                updateConnectionState(null);
-                clearAllAlerts();
+                updateConnectionStateRef.current(null);
+                setStatus('disconnected'); // Update status to disconnected
             } catch (error) {
                 console.error('Error stopping SignalR connection:', error);
             }
         }
-    }, [connection, updateConnectionState, clearAllAlerts]);
+    }, [connection]);
 
     useEffect(() => {
         return () => {
@@ -412,16 +454,34 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         };
     }, [connection]);
 
-    useEffect(() => { startRef.current = startConnection; }, [startConnection]);
-    useEffect(() => { reconnectRef.current = forceReconnect; }, [forceReconnect]);
+    // Initialize connection when user is authenticated
+    useEffect(() => {
+        console.log('🔌 Auth effect triggered - isAuthenticated:', isAuthenticated, 'connection state:', connection?.state);
+        
+        if (isAuthenticated && (!connection || connection.state === HubConnectionState.Disconnected)) {
+            console.log('🔌 User authenticated, starting SignalR connection...');
+            startConnection().catch((error) => {
+                console.error('Failed to start SignalR connection:', error);
+            });
+        }
+        
+        // Stop connection when user logs out
+        if (!isAuthenticated && connection) {
+            console.log('🔌 User logged out, stopping SignalR connection...');
+            stopConnection();
+        }
+    }, [isAuthenticated, connection, startConnection, stopConnection]);
+
+    // Update refs directly in the functions instead of using useEffect
+    startRef.current = startConnection;
+    reconnectRef.current = forceReconnect;
 
     const contextValue: SignalRContextType = {
         connection,
+        status,
+        lastError,
         isConnected,
         connectionState,
-        alerts,
-        clearAlert,
-        clearAllAlerts,
         onTransactionUpdate,
         offTransactionUpdate,
         startConnection,

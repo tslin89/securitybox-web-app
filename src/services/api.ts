@@ -212,6 +212,7 @@ export interface CreateUserRequest {
   phoneNo?: string;
   password: string;
   userType: number;
+  boxID: number;
   fingerprintEnabled?: boolean;
   userEnabled?: boolean;
 }
@@ -223,6 +224,7 @@ export interface UpdateUserRequest {
   phoneNo?: string;
   password?: string;
   userType: number;
+  boxID: number;
   fingerprintEnabled?: boolean;
   userEnabled?: boolean;
 }
@@ -246,6 +248,23 @@ export const getUser = async (userId: number): Promise<User> => {
       throw new Error('User not found');
     }
     throw new Error('Failed to fetch user');
+  }
+
+  return response.json();
+};
+
+export const deleteUser = async (userId: number, fingerprintNum: number): Promise<{ message: string }> => {
+  
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update user');
   }
 
   return response.json();

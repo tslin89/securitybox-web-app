@@ -2,13 +2,18 @@
 import React from 'react';
 import { useSignalR } from '../contexts/SignalRContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useAlerts } from '../alerts/AlertsProvider';
 
 const GlobalAlerts: React.FC = () => {
-  const { alerts, clearAlert, isConnected, connectionState, forceReconnect } = useSignalR();
+  const { isConnected, connectionState, forceReconnect } = useSignalR();
+  const { alerts, dismiss } = useAlerts();
   const { isAuthenticated } = useAuth();
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
+  // Debug logging
+  console.log('🔍 GlobalAlerts - isConnected:', isConnected, 'connectionState:', connectionState);
+
+  const getAlertIcon = (severity: string) => {
+    switch (severity) {
       case 'success':
         return '✅';
       case 'warning':
@@ -20,7 +25,7 @@ const GlobalAlerts: React.FC = () => {
     }
   };
 
-  const getAlertStyles = (type: string) => {
+  const getAlertStyles = (severity: string) => {
     const baseStyle = {
       border: '1px solid',
       borderRadius: '8px',
@@ -31,7 +36,7 @@ const GlobalAlerts: React.FC = () => {
       maxWidth: '384px'
     };
 
-    switch (type) {
+    switch (severity) {
       case 'success':
         return {
           ...baseStyle,
@@ -131,25 +136,22 @@ const GlobalAlerts: React.FC = () => {
         {alerts.map((alert) => (
           <div
             key={alert.id}
-            style={getAlertStyles(alert.type)}
+            style={getAlertStyles(alert.severity || 'info')}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start' }}>
               <div style={{ flexShrink: 0 }}>
                 <span style={{ fontSize: '18px' }}>
-                  {getAlertIcon(alert.type)}
+                  {getAlertIcon(alert.severity || 'info')}
                 </span>
               </div>
               <div style={{ marginLeft: '12px', flex: 1 }}>
                 <p style={{ fontSize: '14px', fontWeight: '500', margin: 0 }}>
                   {alert.message}
                 </p>
-                <p style={{ fontSize: '12px', marginTop: '4px', opacity: 0.75, margin: 0 }}>
-                  {alert.timestamp.toLocaleTimeString()}
-                </p>
               </div>
               <div style={{ marginLeft: '12px', flexShrink: 0 }}>
                 <button
-                  onClick={() => clearAlert(alert.id)}
+                  onClick={() => dismiss(alert.id)}
                   style={{
                     background: 'none',
                     border: 'none',

@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -55,6 +53,7 @@ function eventLabel(code: string) {
     case 'C008': return 'Parcel returned';
     case 'C009': return 'Box stolen';
     case 'C010': return 'Box returned';
+    case 'D001': return 'Fingerprint Registered'
     default:     return 'Unknown';
   }
 }
@@ -184,11 +183,7 @@ export default function TransactionsGrid() {
   }, []);
 
   return (
-    <Paper elevation={1} sx={{ p: { xs: 1, sm: 2 }, borderRadius: 3 }}>
-      <Typography variant="h6" sx={{ px: 1, pt: 1, pb: 1 }}>
-        Transactions
-      </Typography>
-
+    
       <Box sx={{ width: '100%' }}>
         <DataGrid<TxRow>
           rows={rows}
@@ -219,6 +214,5 @@ export default function TransactionsGrid() {
           }}
         />
       </Box>
-    </Paper>
   );
 }

@@ -1,7 +1,7 @@
 // src/theme/customizations/dataGrid.ts
 import type { Theme } from '@mui/material/styles';
 import type { DataGridProComponents } from '@mui/x-data-grid-pro/themeAugmentation';
-import { gray } from '../..//theme/themePrimitives'; // note: primitives are in src/theme/themePrimitives.ts
+// import { gray } from '../..//theme/themePrimitives'; // note: primitives are in src/theme/themePrimitives.ts
 
 export const dataGridCustomizations: DataGridProComponents<Theme> = {
   MuiDataGrid: {

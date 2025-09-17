@@ -1,12 +1,12 @@
 // src/pages/Users.tsx
-import React, { useState, useEffect} from 'react';
-import Container from '@mui/material/Container';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Stack from '@mui/material/Stack';
+import React, { useState} from 'react';
+// import Container from '@mui/material/Container';
+// import Card from '@mui/material/Card';
+// import CardContent from '@mui/material/CardContent';
+// import Typography from '@mui/material/Typography';
+// import TextField from '@mui/material/TextField';
+// import Button from '@mui/material/Button';
+// import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import UpdateUser from '../components/UpdateUser';
 import AddUser from '../components/AddUser';
@@ -65,7 +65,7 @@ const Users: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: 'grey.50' }}>
+    <Box sx={{ minHeight: '100vh' }}>
       {currentView === 'list' && (
         <UserList onAddUser={handleAddUser} onEditUser={handleEditUser} refreshTrigger={refreshTrigger} />
       )}

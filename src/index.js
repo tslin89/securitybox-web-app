@@ -38,13 +38,13 @@ root.render(
   <React.StrictMode>
     <StyledEngineProvider injectFirst>
       <AuthProvider>
-        <SignalRProvider>
-          <BrowserRouter>
-            <AlertsProvider>
+        <AlertsProvider>
+          <SignalRProvider>
+            <BrowserRouter>
               <AppRoutes />
-            </AlertsProvider>
-          </BrowserRouter>
-        </SignalRProvider>
+            </BrowserRouter>
+          </SignalRProvider>
+        </AlertsProvider>
       </AuthProvider>
     </StyledEngineProvider>
   </React.StrictMode>

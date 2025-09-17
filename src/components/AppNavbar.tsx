@@ -8,9 +8,16 @@ import { tabsClasses } from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import SideMenuMobile from './SideMenuMobile';
 import MenuButton from './MenuButton';
 import ColorModeIconDropdown from '.././theme/ColorModeIconDropdown';
+import Badge from '@mui/material/Badge';
+import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { useAlerts } from '../alerts/AlertsProvider';
+import { useSignalR } from '../contexts/SignalRContext';
 
 const Toolbar = styled(MuiToolbar)({
   width: '100%',
@@ -30,9 +37,42 @@ const Toolbar = styled(MuiToolbar)({
 
 export default function AppNavbar() {
   const [open, setOpen] = React.useState(false);
+  const { alerts } = useAlerts();
+  const { status, lastError, forceReconnect } = useSignalR() as any;
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
+  };
+
+  // Get connection status chip
+  const getConnectionStatusChip = () => {
+    if (status === 'connected') {
+      return <Chip size="small" color="success" label="Online" />;
+    }
+    if (status === 'connecting') {
+      return <Chip size="small" color="info" label="Connecting..." />;
+    }
+    if (status === 'error') {
+      return (
+        <Chip
+          size="small"
+          color="error"
+          label={lastError ? `Error: ${lastError}` : 'Error'}
+          onClick={forceReconnect}
+          clickable
+        />
+      );
+    }
+    return (
+      <Chip
+        size="small"
+        variant="outlined"
+        color="default"
+        label="Offline"
+        onClick={forceReconnect}
+        clickable
+      />
+    );
   };
 
   return (
@@ -68,10 +108,31 @@ export default function AppNavbar() {
               Dashboard
             </Typography>
           </Stack>
-          <ColorModeIconDropdown />
-          <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
-            <MenuRoundedIcon />
-          </MenuButton>
+          
+          {/* Right side controls */}
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {/* Connection Status */}
+            <Tooltip title={status === 'connected' ? 'Connection is active' : 'Click to reconnect'}>
+              {getConnectionStatusChip()}
+            </Tooltip>
+            
+            {/* Alert Notifications */}
+            <Tooltip title={`${alerts.length} alert${alerts.length !== 1 ? 's' : ''}`}>
+              <IconButton size="small" color="inherit" aria-label="notifications">
+                <Badge badgeContent={alerts.length} color="error" overlap="circular">
+                  <NotificationsRoundedIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+            
+            {/* Theme Switcher */}
+            <ColorModeIconDropdown />
+            
+            {/* Menu Button */}
+            <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
+              <MenuRoundedIcon />
+            </MenuButton>
+          </Stack>
           <SideMenuMobile open={open} toggleDrawer={toggleDrawer} />
         </Stack>
       </Toolbar>

@@ -5,6 +5,7 @@ export type AlertItem = {
   message: string;
   severity?: 'error' | 'warning' | 'info' | 'success';
   persistent?: boolean;       // stay until dismissed
+  timestamp?: number;         // timestamp when alert was created
 };
 
 type AlertsCtx = {

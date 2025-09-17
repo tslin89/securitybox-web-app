@@ -9,7 +9,7 @@ import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SignalRStatus from './SignalRStatus';
-import { bottomNavigationActionClasses, IconButton } from '@mui/material';
+import { IconButton } from '@mui/material';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import Badge from '@mui/material/Badge';
 import ColorModeIconDropdown from '../theme/ColorModeIconDropdown';
@@ -45,8 +45,10 @@ export default function SecondaryBar() {
   return (
     <Box
       sx={{
-        position: 'sticky',
-        top: 0, //(t) => t.mixins.toolbar.minHeight,
+        position: 'fixed',
+        top: 0,
+        left: { xs: 0, md: 240 }, // Account for sidebar width on desktop
+        right: 0,
         zIndex: (t) => t.zIndex.appBar - 1,
         borderBottom: 1,
         borderColor: 'divider',

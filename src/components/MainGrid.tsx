@@ -8,11 +8,14 @@ import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
+import FormControl from '@mui/material/FormControl';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import InputLabel from '@mui/material/InputLabel';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { BarChart, LineChart, PieChart } from '@mui/x-charts';
 import { getDashboardOverview } from '../services/api';
 import { EVENT_SETS, EVENT_LABELS } from '../constants/events';
-import { useSignalR } from '../contexts/SignalRContext';
 
 function StatCard({ title, value }: { title: string; value: number | string }) {
   return (
@@ -23,23 +26,35 @@ function StatCard({ title, value }: { title: string; value: number | string }) {
   );
 }
 
+function AreaGradient({ color, id }: { color: string; id: string }) {
+  return (
+    <defs>
+      <linearGradient id={id} x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stopColor={color} stopOpacity={0.6} />
+        <stop offset="30%" stopColor={color} stopOpacity={0.4} />
+        <stop offset="70%" stopColor={color} stopOpacity={0.2} />
+        <stop offset="100%" stopColor={color} stopOpacity={0.05} />
+      </linearGradient>
+    </defs>
+  );
+}
+
 export default function MainGrid() {
-  const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
   const [data, setData] = React.useState<Awaited<ReturnType<typeof getDashboardOverview>> | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
-  const [updateAvailable, setUpdateAvailable] = React.useState(false);
+  const [selectedPeriod, setSelectedPeriod] = React.useState<number>(7);
 
   const fetchData = React.useCallback(async () => {
     try {
-      const d = await getDashboardOverview({ days: 14, recent: 25, activeMinutes: 10 });
+      const d = await getDashboardOverview({ days: selectedPeriod, recent: 25, activeMinutes: 10 });
       setData(d);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     }
-  }, []);
+  }, [selectedPeriod]);
 
   const handleRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -49,6 +64,10 @@ export default function MainGrid() {
       setRefreshing(false);
     }
   }, [fetchData]);
+
+  const handlePeriodChange = React.useCallback((event: any) => {
+    setSelectedPeriod(event.target.value);
+  }, []);
 
   React.useEffect(() => {
     (async () => {
@@ -73,16 +92,16 @@ export default function MainGrid() {
   const { summary, perDayCounts, weightSeries, countsSinceStart } = data;
 
   // normalize casing from the API (camelCase vs PascalCase)
-  const pdc = (perDayCounts as any[]).map(r => ({
-    date: r.date ?? r.Date,
-    eventCode: r.eventCode ?? r.EventCode,
-    count: r.count ?? r.Count,
-  }));
+  // const pdc = (perDayCounts as any[]).map(r => ({
+  //   date: r.date ?? r.Date,
+  //   eventCode: r.eventCode ?? r.EventCode,
+  //   count: r.count ?? r.Count,
+  // }));
 
-  const counts = (countsSinceStart as any[]).map(r => ({
-    eventCode: r.eventCode ?? r.EventCode,
-    total: r.total ?? r.Total,
-  }));
+  // const counts = (countsSinceStart as any[]).map(r => ({
+  //   eventCode: r.eventCode ?? r.EventCode,
+  //   total: r.total ?? r.Total,
+  // }));
 
 
   // Utilities to bucket by your front-end definitions
@@ -107,7 +126,7 @@ export default function MainGrid() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
-      {/* Header with refresh button */}
+      {/* Header with period dropdown and refresh button */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" component="h1">Dashboard</Typography>
@@ -117,26 +136,40 @@ export default function MainGrid() {
             </Typography>
           )}
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={refreshing}
-          sx={{ minWidth: 120 }}
-        >
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Period</InputLabel>
+            <Select
+              value={selectedPeriod}
+              label="Period"
+              onChange={handlePeriodChange}
+            >
+              <MenuItem value={7}>7 days</MenuItem>
+              <MenuItem value={14}>14 days</MenuItem>
+              <MenuItem value={30}>30 days</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={handleRefresh}
+            disabled={refreshing}
+            sx={{ minWidth: 120 }}
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </Box>
       </Box>
 
       {/* Top stats */}
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}><StatCard title="Total Boxes" value={summary.totalBoxes} /></Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}><StatCard title="Active Boxes" value={summary.activeBoxes} /></Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard title="Deliveries (14d)" value={sumCodes(EVENT_SETS.deliveries)} />
+          <StatCard title={`Deliveries (${selectedPeriod}d)`} value={sumCodes(EVENT_SETS.deliveries)} />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard title="Incidents (14d)" value={sumCodes(EVENT_SETS.incidents)} />
+          <StatCard title={`Incidents (${selectedPeriod}d)`} value={sumCodes(EVENT_SETS.incidents)} />
         </Grid>
       </Grid>
 
@@ -144,9 +177,11 @@ export default function MainGrid() {
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid size={{ xs: 12, md: 6 }}>
           <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Deliveries (last 14 days)</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Deliveries (last {selectedPeriod} days)</Typography>
             <BarChart
               height={280}
+              borderRadius={5}
+
               xAxis={[{ scaleType: 'band', data: xDates }]}
               series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
             />
@@ -156,9 +191,10 @@ export default function MainGrid() {
         {/* Incidents stacked */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Incidents (last 14 days)</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Incidents (last {selectedPeriod} days)</Typography>
             <BarChart
               height={280}
+              borderRadius={5}
               xAxis={[{ scaleType: 'band', data: xDates }]}
               series={[
                 { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc' },
@@ -171,7 +207,7 @@ export default function MainGrid() {
         {/* Weight trend */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Average Weight (last 14 days)</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Average Weight (last {selectedPeriod} days)</Typography>
             <LineChart
               height={280}
               xAxis={[{
@@ -180,15 +216,28 @@ export default function MainGrid() {
                   return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
                 })
               }]}
-              series={[{ data: weightSeries.map(x => x.avgWeight), label: 'Avg weight (g)', area: true }]}
-            />
+              series={[{ 
+                data: weightSeries.map(x => x.avgWeight), 
+                label: 'Avg weight (g)', 
+                area: true,
+                color: '#4255fb' //theme.palette.primary.main
+              }]}
+              sx={{
+                '& .MuiAreaElement-root': {
+                  fill: 'url(#organic)',
+                }
+              }}
+            >
+              <AreaGradient color="#4255fb" id="organic" />
+            </LineChart>
+
           </CardContent></Card>
         </Grid>
 
         {/* Event mix */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Event mix (last 14 days)</Typography>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>Event mix (last {selectedPeriod} days)</Typography>
             <PieChart height={280} series={[{ data: pieData }]} />
           </CardContent></Card>
         </Grid>

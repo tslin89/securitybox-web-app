@@ -9,7 +9,7 @@ import {
   InputAdornment,
   IconButton,
   Alert,
-  Avatar,
+  // Avatar,
   CircularProgress,
 } from '@mui/material';
 import EmailRoundedIcon from '@mui/icons-material/EmailRounded';
@@ -57,14 +57,25 @@ const Login: React.FC = () => {
 
     try {
       const result = await UserLogin(email, password);
+      console.log('Login API response:', result);
+      
       if (result.status === 1) {
         const loginData = {
-          token: result.data?.token || 'dummy-token',
-          user: {
-            id: result.data?.user?.userID || -1,
-            name: result.data?.user?.userName || 'unknown',
-            email: result.data?.user?.email || 'unknown',
+          data: {
+            token: result.data?.token || 'dummy-token',
+            user: {
+              userID: result.data?.user?.userID || -1,
+              userName: result.data?.user?.userName || 'unknown',
+              email: result.data?.user?.email || 'unknown',
+              phoneNo: result.data?.user?.phoneNo || '',
+              boxID: result.data?.user?.boxID || -1,
+            },
+            boxList: result.data?.boxList || [],
+            eventCodes: result.data?.eventCodes || [],
           },
+          transactionID: result.transactionID,
+          status: result.status,
+          message: result.message,
           expiresIn: result.expiresIn || 24 * 60 * 60, // seconds
         };
 
@@ -75,7 +86,7 @@ const Login: React.FC = () => {
         await startConnection();
 
         // Subscribe push
-        await ensurePushSubscribed(loginData.user.id, loginData.token);
+        await ensurePushSubscribed(loginData.data.user.userID, loginData.data.token);
 
         // Go to your first protected page
         navigate('/dashboard', { replace: true });
