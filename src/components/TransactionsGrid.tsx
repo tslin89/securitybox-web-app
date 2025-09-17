@@ -139,11 +139,11 @@ export default function TransactionsGrid() {
 
   // fetch current page from your existing API
   async function fetchPage() {
-    if (!user?.id && user?.id !== 0) return;
+    if (!user?.userID && user?.userID !== 0) return;
     setLoading(true);
     try {
       const res = (await getTransactions(
-        String(user.id),              // ✅ your API needs userId as string
+        String(user.userID),              // ✅ your API needs userId as string
         paginationModel.page,         // your API is already 0-based
         paginationModel.pageSize
       )) as ApiResponse;
@@ -172,7 +172,7 @@ export default function TransactionsGrid() {
   useEffect(() => {
     fetchPage();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paginationModel.page, paginationModel.pageSize, user?.id]);
+  }, [paginationModel.page, paginationModel.pageSize, user?.userID]);
 
   // refresh on SignalR events
   useEffect(() => {

@@ -187,7 +187,7 @@ export async function getDashboardOverview(
   if (params.recent) q.set('recent', String(params.recent));
   if (params.activeMinutes) q.set('activeMinutes', String(params.activeMinutes));
 
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL || ''}/dashboard/overview?${q.toString()}`);
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL || ''}/dashboard/overview?${q.toString()}&code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`);
   if (!res.ok) throw new Error(`DashboardOverview failed: ${res.status}`);
   return res.json();
 }
@@ -326,7 +326,7 @@ export const checkFingerprintStatus = async (userId: number): Promise<{ fingerpr
 };
 
 export async function startFingerprintOnDevice(deviceId: string, userId: number) {
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/fingerprint/start`, {
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/fingerprint/start?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // include auth if needed
