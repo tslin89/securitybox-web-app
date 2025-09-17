@@ -16,7 +16,6 @@ import {
   chartsCustomizations,
   dataGridCustomizations,
   datePickersCustomizations,
-  treeViewCustomizations,
 } from '../theme/customizations';
 import GlobalAlertBanner from '../components/GlobalAlertBanner';
 // import { Typography } from '@mui/material';
@@ -25,7 +24,6 @@ const xThemeComponents = {
   ...chartsCustomizations,
   ...dataGridCustomizations,
   ...datePickersCustomizations,
-  ...treeViewCustomizations,
 };
 
 export default function AppShell() {

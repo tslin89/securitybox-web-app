@@ -4,6 +4,7 @@
 # Build artifacts
 /build
 /dist
+.tsbuildinfo
 
 # Environment variables
 .env
