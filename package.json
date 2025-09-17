@@ -25,7 +25,8 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS='--max-old-space-size=8192' craco build",
+    "build": "GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS='--max-old-space-size=12288 --max-semi-space-size=256' craco build",
+    "build:aggressive": "GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS='--max-old-space-size=12288 --max-semi-space-size=256' craco build --config craco.config.aggressive.js",
     "build:fallback": "GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true NODE_OPTIONS='--max-old-space-size=8192' react-scripts build",
     "build:analyze": "GENERATE_SOURCEMAP=false npm run build && npx webpack-bundle-analyzer build/static/js/*.js",
     "test": "craco test",

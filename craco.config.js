@@ -3,29 +3,19 @@ const path = require('path');
 module.exports = {
   webpack: {
     configure: (webpackConfig, { env, paths }) => {
-      // Configure ForkTsCheckerWebpackPlugin to prevent memory issues
-      const ForkTsCheckerWebpackPlugin = webpackConfig.plugins.find(
-        plugin => plugin.constructor.name === 'ForkTsCheckerWebpackPlugin'
-      );
+      console.log('CRACO: Configuring webpack for environment:', env);
       
-      if (ForkTsCheckerWebpackPlugin) {
-        // Option 1: Increase memory limit for TypeScript checker
-        ForkTsCheckerWebpackPlugin.options = {
-          ...ForkTsCheckerWebpackPlugin.options,
-          memoryLimit: 8192, // 8GB
-          typescript: {
-            ...ForkTsCheckerWebpackPlugin.options.typescript,
-            memoryLimit: 8192,
-          },
-          eslint: {
-            ...ForkTsCheckerWebpackPlugin.options.eslint,
-            memoryLimit: 8192,
-          },
-        };
-        
-        // Option 2: Disable the plugin entirely to prevent memory issues
-        webpackConfig.plugins = webpackConfig.plugins.filter(plugin => plugin.constructor.name !== 'ForkTsCheckerWebpackPlugin');
-      }
+      // Disable ForkTsCheckerWebpackPlugin to prevent memory issues
+      const originalPluginCount = webpackConfig.plugins.length;
+      webpackConfig.plugins = webpackConfig.plugins.filter(plugin => {
+        const isForkTsChecker = plugin.constructor.name === 'ForkTsCheckerWebpackPlugin';
+        if (isForkTsChecker) {
+          console.log('CRACO: Removing ForkTsCheckerWebpackPlugin to prevent memory issues');
+        }
+        return !isForkTsChecker;
+      });
+      
+      console.log(`CRACO: Removed ${originalPluginCount - webpackConfig.plugins.length} ForkTsCheckerWebpackPlugin(s)`);
 
       // Only apply optimizations for production builds
       if (env === 'production') {

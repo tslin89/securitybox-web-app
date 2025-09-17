@@ -52,12 +52,14 @@ jobs:
           output_location: "build"
           github_id_token: ${{ steps.idtoken.outputs.result }}
         env:
-          NODE_OPTIONS: --max-old-space-size=8192 --max-semi-space-size=128
+          NODE_OPTIONS: --max-old-space-size=12288 --max-semi-space-size=256
           GENERATE_SOURCEMAP: false
           CI: false
           NODE_ENV: production
           DISABLE_ESLINT_PLUGIN: true
           TSC_COMPILE_ON_ERROR: true
+          SKIP_PREFLIGHT_CHECK: true
+          FAST_REFRESH: false
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
