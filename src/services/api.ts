@@ -3,6 +3,7 @@ var AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.ne
 
 if (window.location.hostname === 'localhost') {
   AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
+  // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
 }
 
 // interface Transaction {
@@ -165,3 +166,174 @@ export async function ensurePushSubscribed(userId: number, jwt: string) {
 //     body: JSON.stringify({ userId, subscription: sub }),
 //   });
 // }
+
+export type DashboardOverview = {
+  summary: { totalBoxes: number; activeBoxes: number; openDoorsNow: number };
+  perDayCounts: Array<{ date: string; eventCode: string; count: number }>;
+  weightSeries: Array<{ date: string; avgWeight: number }>;
+  recentEvents: Array<{
+    id: number; timestamp: string; boxID: number; eventCode: string;
+    doorState: number; fingerprintNum: number | null; totalWeight: number | null; boxPosition: number | null;
+  }>;
+  countsSinceStart: Array<{ eventCode: string; total: number }>;
+  topBoxesIncidents: Array<{ boxID: number; eventCode: string; total: number }>;
+};
+
+export async function getDashboardOverview(
+  params: { days?: number; recent?: number; activeMinutes?: number } = {}
+): Promise<DashboardOverview> {
+  const q = new URLSearchParams();
+  if (params.days) q.set('days', String(params.days));
+  if (params.recent) q.set('recent', String(params.recent));
+  if (params.activeMinutes) q.set('activeMinutes', String(params.activeMinutes));
+
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL || ''}/dashboard/overview?${q.toString()}`);
+  if (!res.ok) throw new Error(`DashboardOverview failed: ${res.status}`);
+  return res.json();
+}
+
+// users
+// Add these types and methods to your api.ts file
+
+export interface User {
+  userID: number;
+  userName: string;
+  email: string;
+  phoneNo?: string;
+  userType: number;
+  fingerprintNum?: number;
+  fingerprintEnabled?: boolean;
+  userEnabled?: boolean;
+}
+
+export interface CreateUserRequest {
+  userName: string;
+  email: string;
+  phoneNo?: string;
+  password: string;
+  userType: number;
+  boxID: number;
+  fingerprintEnabled?: boolean;
+  userEnabled?: boolean;
+}
+
+export interface UpdateUserRequest {
+  userID: number;
+  userName: string;
+  email: string;
+  phoneNo?: string;
+  password?: string;
+  userType: number;
+  boxID: number;
+  fingerprintEnabled?: boolean;
+  userEnabled?: boolean;
+}
+
+// User Management API Methods
+export const getUsers = async (): Promise<User[]> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch users');
+  }
+
+  return response.json();
+};
+
+export const getUser = async (userId: number): Promise<User> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('User not found');
+    }
+    throw new Error('Failed to fetch user');
+  }
+
+  return response.json();
+};
+
+export const deleteUser = async (userId: number, fingerprintNum: number): Promise<{ message: string }> => {
+  
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update user');
+  }
+
+  return response.json();
+};
+
+export const createUser = async (userData: CreateUserRequest): Promise<{ userID: number; message: string }> => {
+  // Hash the password before sending
+  const hashedUserData = {
+    ...userData,
+    password: SHA256(userData.password).toString()
+  };
+
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(hashedUserData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to create user');
+  }
+
+  return response.json();
+};
+
+export const updateUser = async (userId: number, userData: UpdateUserRequest): Promise<{ message: string }> => {
+  // Hash the password if provided
+  const hashedUserData = userData.password 
+    ? { ...userData, password: SHA256(userData.password).toString() }
+    : userData;
+
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(hashedUserData),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update user');
+  }
+
+  return response.json();
+};
+
+export const checkFingerprintStatus = async (userId: number): Promise<{ fingerprintNum?: number }> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/fingerprint-status?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to check fingerprint status');
+  }
+
+  return response.json();
+};
+
+export async function startFingerprintOnDevice(deviceId: string, userId: number) {
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/fingerprint/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // include auth if needed
+    body: JSON.stringify({ deviceId, userId })
+  });
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json();
+}
