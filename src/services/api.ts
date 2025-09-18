@@ -337,3 +337,57 @@ export async function startFingerprintOnDevice(deviceId: string, userId: number)
   }
   return res.json();
 }
+
+// Event Settings API Methods
+
+export interface EventSetting {
+  eventCode: string;
+  eventDescription: string;
+  eventType: number;
+  notificationEnabled: boolean;
+}
+
+export interface EventSettingsResponse {
+  transactionID: string;
+  status: number;
+  message: string;
+  data: EventSetting[];
+}
+
+export interface UpdateEventSettingsRequest {
+  disabledCodes: string[];
+}
+
+export interface UpdateEventSettingsResponse {
+  transactionID: string;
+  status: number;
+  message: string;
+  data: string;
+}
+
+export const getUserEventSettings = async (userId: number): Promise<EventSettingsResponse> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/eventsettings?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch user event settings');
+  }
+
+  return response.json();
+};
+
+export const updateUserEventSettings = async (userId: number, disabledCodes: string[]): Promise<UpdateEventSettingsResponse> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/eventsettings?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ disabledCodes }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update user event settings');
+  }
+
+  return response.json();
+};
