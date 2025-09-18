@@ -203,7 +203,7 @@ export interface User {
   userType: number;
   fingerprintNum?: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 export interface CreateUserRequest {
@@ -214,7 +214,7 @@ export interface CreateUserRequest {
   userType: number;
   boxID: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 export interface UpdateUserRequest {
@@ -226,7 +226,7 @@ export interface UpdateUserRequest {
   userType: number;
   boxID: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 // User Management API Methods
@@ -326,11 +326,15 @@ export const checkFingerprintStatus = async (userId: number): Promise<{ fingerpr
 };
 
 export async function startFingerprintOnDevice(deviceId: string, userId: number) {
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/fingerprint/start?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // include auth if needed
-    body: JSON.stringify({ deviceId, userId })
+    body: JSON.stringify({ 
+      deviceId, 
+      userId,
+      eventCode: "D001" // add fingerprint
+     })
   });
   if (!res.ok) {
     throw new Error(await res.text());

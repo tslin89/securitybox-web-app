@@ -127,11 +127,11 @@ export default function MainGrid() {
   ).map(([code, total]) => ({ label: `${code} ${EVENT_LABELS[code] ?? ''}`, value: total }));
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 }, px: { xs: 0, sm: 2, md: 3 } }}>
+    <Box>
       {/* Header with period dropdown and refresh button */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
-          <Typography variant="h4" component="h1">Dashboard</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 600 }} component="h1">Dashboard</Typography>
           {lastUpdated && (
             <Typography variant="body2" color="text.secondary">
               Last updated: {lastUpdated.toLocaleTimeString()}
@@ -248,6 +248,6 @@ export default function MainGrid() {
           </CardContent></Card>
         </Grid>
       </Grid>
-    </Container>
+    </Box>
   );
 }

@@ -7,5 +7,5 @@ interface User {
     userType: number;
     fingerprintNum?: number;
     fingerprintEnabled?: boolean;
-    userEnabled?: boolean;
+    isEnabled?: boolean;
   }

@@ -11,6 +11,7 @@ import Box from '@mui/material/Box';
 import UpdateUser from '../components/UpdateUser';
 import AddUser from '../components/AddUser';
 import UserList from '../components/UserList';
+import Container from '@mui/material/Container';
 
 // export default function Users() {
 //   const [name, setName] = React.useState('');
@@ -65,7 +66,7 @@ const Users: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', py: { xs: 0, sm: 3 }, mt: { xs: 8, md: 0 } }} >
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 }, mt: { xs: 8, md: 0 } }}>
       {currentView === 'list' && (
         <UserList onAddUser={handleAddUser} onEditUser={handleEditUser} refreshTrigger={refreshTrigger} />
       )}
@@ -81,7 +82,7 @@ const Users: React.FC = () => {
           onCancel={handleCancel}
         />
       )}
-    </Box>
+    </Container>
   );
 };
 
