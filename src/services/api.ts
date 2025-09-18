@@ -37,8 +37,8 @@ export const getTransactions = async (
   return data;
 }
 
-export const initiateSignalR = async () => {
-  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/negotiateSignalR?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+export const initiateSignalR = async (userId: number) => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/negotiateSignalR?userId=${userId}&code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
   if (!response.ok) {
     throw new Error('Failed to initiate SignalR');
   }
@@ -60,7 +60,7 @@ export const UserLogin = async (email: string, password: string) => {
     }),
   });
   if (!response.ok) {
-    throw new Error('Login failed');
+    throw new Error(response.statusText);
   }
   return response.json();
 }

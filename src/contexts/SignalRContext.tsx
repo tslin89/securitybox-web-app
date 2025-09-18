@@ -23,7 +23,7 @@ interface SignalRContextType {
     connectionState: string;
     onTransactionUpdate: (callback: () => void) => void;
     offTransactionUpdate: (callback: () => void) => void;
-    startConnection: () => Promise<void>;
+    startConnection: (userId?: number) => Promise<void>;
     stopConnection: () => Promise<void>;
     forceReconnect: () => Promise<void>;
 }
@@ -40,7 +40,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     const [connectionState, setConnectionState] = useState('Disconnected');
     // Removed internal alerts state - using AlertsProvider instead
     const [transactionUpdateCallbacks, setTransactionUpdateCallbacks] = useState<Set<() => void>>(new Set());
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user, isLoading } = useAuth();
     const { push } = useAlerts();
     const [status, setStatus] = useState<Status>('disconnected');
     const [lastError, setLastError] = useState<string | undefined>(undefined);
@@ -99,8 +99,13 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
         // Handle incoming messages and add to AlertsProvider
         // Adjust event names/shape to your server:
-        connection?.on('Alert', (payload: { id?: string; message: string; type?: 'info' | 'warning' | 'error' | 'success'; persistent?: boolean; }) => {
-            addAlert(payload.message, payload.type ?? 'info');
+        connection?.on('Alert', (payload: { id?: string; message: string; type?: 'info' | 'warning' | 'error' | 'success'; persistent?: boolean; eventCode?: string; }) => {
+            // Check if this is a critical error code that should be persistent
+            const isCriticalError = payload.eventCode === 'C007' || payload.eventCode === 'C009';
+            const isPersistent = payload.persistent || isCriticalError;
+            const alertType = isCriticalError ? 'error' : (payload.type ?? 'info');
+            
+            addAlert(payload.message, alertType, isPersistent);
         });
 
         // Cleanup function to remove event listeners
@@ -185,23 +190,87 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     updateConnectionStateRef.current = updateConnectionState;
 
     const forceReconnect = useCallback(async () => {
+        console.log('🔌 Force reconnect triggered - user:', user, 'userID:', user?.userID);
+        
+        // Try to get user data from localStorage as fallback
+        let userId = user?.userID;
+        if (!userId) {
+            try {
+                const storedUser = localStorage.getItem('authUser');
+                if (storedUser) {
+                    const parsedUser = JSON.parse(storedUser);
+                    userId = parsedUser.userID;
+                    console.log('🔌 Retrieved userID from localStorage:', userId);
+                }
+            } catch (error) {
+                console.error('🔌 Error parsing stored user data:', error);
+            }
+        }
+
+        if (!userId) {
+            console.error('🔌 Cannot reconnect: User ID not available in context or localStorage');
+            setStatus('disconnected');
+            addAlert('Cannot reconnect: User data not available', 'error', false);
+            return;
+        }
+
         try {
             setStatus('connecting');
             setLastError(undefined);
-            // if you keep a builder, stop old then start new:
+            // Stop existing connection if any
             if (connection) {
                 await connection.stop().catch(() => { });
             }
-            // (Re)create + start connection using your existing logic
-            // await newConnection.start();
-            setStatus('connected');
+            
+            // Create a temporary user object for the connection
+            const tempUser = { userID: userId };
+            console.log('🔌 Attempting reconnection with userID:', userId);
+            
+            // Call initiateSignalR directly with the userId
+            const response = await initiateSignalR(userId);
+            
+            if (response.Status === 1 && response.Data) {
+                const { Url, AccessToken } = response.Data;
+                
+                const newConnection = new HubConnectionBuilder()
+                    .withUrl(Url, {
+                        accessTokenFactory: () => AccessToken,
+                        withCredentials: true
+                    })
+                    .withAutomaticReconnect([0, 1000, 2000, 5000, 10000, 15000, 30000])
+                    .configureLogging('Information')
+                    .build();
+
+                // Set up event handlers (simplified version)
+                newConnection.onclose((err) => {
+                    setFromHubState(HubConnectionState.Disconnected);
+                    if (err) setLastError(err.message);
+                });
+                newConnection.onreconnecting(() => setFromHubState(HubConnectionState.Reconnecting));
+                newConnection.onreconnected(() => setFromHubState(HubConnectionState.Connected));
+
+                // Handle incoming messages
+                newConnection.on('Alert', (payload: { id?: string; message: string; type?: 'info' | 'warning' | 'error' | 'success'; persistent?: boolean; eventCode?: string; }) => {
+                    const isCriticalError = payload.eventCode === 'C007' || payload.eventCode === 'C009';
+                    const isPersistent = payload.persistent || isCriticalError;
+                    const alertType = isCriticalError ? 'error' : (payload.type ?? 'info');
+                    
+                    addAlert(payload.message, alertType, isPersistent);
+                });
+
+                await newConnection.start();
+                setConnection(newConnection);
+                setFromHubState(HubConnectionState.Connected);
+                console.log('🔌 Force reconnect successful');
+            } else {
+                throw new Error('Invalid response from SignalR negotiation');
+            }
         } catch (e: any) {
             setStatus('error');
             setLastError(e?.message ?? 'Reconnect failed');
-            // Use addAlert instead of push to avoid dependency issues
             addAlert('SignalR reconnect failed', 'error', false);
         }
-    }, [connection, addAlert]);
+    }, [connection, addAlert, user]);
 
 
 
@@ -229,7 +298,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         }, 15000); // Check every 15 seconds
     }, [connection, addAlert]);
 
-    const startConnection = useCallback(async (): Promise<void> => {
+    const startConnection = useCallback(async (userId?: number): Promise<void> => {
         if (connection && connection.state === HubConnectionState.Connected) {
             console.log('🔌 SignalR already connected');
             return;
@@ -240,11 +309,21 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             return;
         }
 
+        // Use passed userId or fall back to context user
+        const userIdToUse = userId || user?.userID;
+        
+        // Early return if user data is not available
+        if (!userIdToUse) {
+            console.error('🔌 User ID not available for SignalR connection, aborting...');
+            setStatus('disconnected');
+            return;
+        }
+
         try {
-            console.log('🚀 Starting SignalR connection...');
+            console.log('🚀 Starting SignalR connection with userID:', userIdToUse);
             setStatus('connecting'); // Update status to connecting
 
-            const response = await initiateSignalR();
+            const response = await initiateSignalR(userIdToUse);
 
             if (response.Status === 1 && response.Data) {
                 const { Url, AccessToken } = response.Data;
@@ -456,13 +535,26 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
     // Initialize connection when user is authenticated
     useEffect(() => {
-        console.log('🔌 Auth effect triggered - isAuthenticated:', isAuthenticated, 'connection state:', connection?.state);
+        console.log('🔌 Auth effect triggered - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'userID:', user?.userID, 'connection state:', connection?.state);
+        console.log('🔌 localStorage check - authToken:', localStorage.getItem('authToken'), 'authUser:', localStorage.getItem('authUser'));
         
-        if (isAuthenticated && (!connection || connection.state === HubConnectionState.Disconnected)) {
-            console.log('🔌 User authenticated, starting SignalR connection...');
-            startConnection().catch((error) => {
+        // Don't attempt connection while auth is still loading
+        if (isLoading) {
+            console.log('🔌 Auth still loading, waiting...');
+            return;
+        }
+        
+        // Only proceed if we have all required data
+        if (isAuthenticated && user && user.userID && (!connection || connection.state === HubConnectionState.Disconnected)) {
+            console.log('🔌 User authenticated with userID, starting SignalR connection...');
+            startConnection(user.userID).catch((error) => {
                 console.error('Failed to start SignalR connection:', error);
             });
+        } else if (isAuthenticated && (!user || !user.userID)) {
+            console.log('🔌 User authenticated but user data incomplete, waiting...', { user, userID: user?.userID });
+            console.log('🔌 This suggests an issue with AuthContext loading user data');
+        } else if (!isAuthenticated) {
+            console.log('🔌 User not authenticated');
         }
         
         // Stop connection when user logs out
@@ -470,7 +562,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             console.log('🔌 User logged out, stopping SignalR connection...');
             stopConnection();
         }
-    }, [isAuthenticated, connection, startConnection, stopConnection]);
+    }, [isLoading, isAuthenticated, user, connection, startConnection, stopConnection]);
 
     // Update refs directly in the functions instead of using useEffect
     startRef.current = startConnection;

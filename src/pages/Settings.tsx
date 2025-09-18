@@ -15,6 +15,7 @@ import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
 import { ensurePushSubscribed } from '../services/api';
 import EventSettings from '../components/EventSettings';
+import { useAuth } from '../contexts/AuthContext';
 // TODO: implement this in your api service
 async function disablePush(userId: number, token: string) {
   // unsubscribe on your server and/or unregister service worker push subscription
@@ -25,27 +26,35 @@ export default function Settings() {
   const [notifEnabled, setNotifEnabled] = React.useState<boolean>(Notification?.permission === 'granted');
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { user, token } = useAuth();
 
   const handleToggle = async () => {
     setBusy(true);
     setMsg(null);
     try {
-      if (!notifEnabled) {
-        // Request browser permission first
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          // TODO: get actual userId, token from your auth context
-          await ensurePushSubscribed(/* userId */ -1, /* token */ 'dummy');
-          setNotifEnabled(true);
-          setMsg({ type: 'success', text: 'Push notifications enabled.' });
+        if (!notifEnabled) {
+          // Request browser permission first
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            if (!user?.userID || !token) {
+              setMsg({ type: 'error', text: 'User authentication required for push notifications.' });
+              return;
+            }
+            await ensurePushSubscribed(user.userID, token);
+            setNotifEnabled(true);
+            setMsg({ type: 'success', text: 'Push notifications enabled.' });
+          } else {
+            setMsg({ type: 'error', text: 'Notification permission denied. Please enable notifications in your browser settings.' });
+          }
         } else {
-          setMsg({ type: 'error', text: 'Notification permission denied. Please enable notifications in your browser settings.' });
+          if (!user?.userID || !token) {
+            setMsg({ type: 'error', text: 'User authentication required for push notifications.' });
+            return;
+          }
+          await disablePush(user.userID, token);
+          setNotifEnabled(false);
+          setMsg({ type: 'success', text: 'Push notifications disabled.' });
         }
-      } else {
-        await disablePush(/* userId */ -1, /* token */ 'dummy');
-        setNotifEnabled(false);
-        setMsg({ type: 'success', text: 'Push notifications disabled.' });
-      }
     } catch (e) {
       setMsg({ type: 'error', text: 'Could not update notification settings.' });
     } finally {
@@ -95,7 +104,13 @@ export default function Settings() {
 
         {/* Event Settings Section */}
         <Box sx={{ mt: 3 }}>
-          <EventSettings userId={1} />
+          {user?.userID ? (
+            <EventSettings userId={user.userID} />
+          ) : (
+            <Alert severity="warning">
+              User authentication required to load event settings.
+            </Alert>
+          )}
         </Box>
     </Container>
   );
