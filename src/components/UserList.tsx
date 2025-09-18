@@ -23,7 +23,8 @@ import {
   // FormControlLabel,
   CircularProgress,
   Alert,
-  Container
+  Container,
+  Tooltip
 } from '@mui/material';
 import { Edit as EditIcon, Add as AddIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
@@ -52,7 +53,7 @@ const UserList: React.FC<{ onAddUser: () => void; onEditUser: (user: User) => vo
   const getUserTypeLabel = (userType: number) => userType === 1 ? 'Admin' : 'User';
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="lg" >
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Typography variant="h5" sx={{ fontWeight: 600 }}>
           User Management
@@ -69,14 +70,19 @@ const UserList: React.FC<{ onAddUser: () => void; onEditUser: (user: User) => vo
           mb: 3
         }}>
           <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={fetchUsers}
-              disabled={loading}
-            >
-              Refresh
-            </Button>
+            <Tooltip title="Refresh">
+              <IconButton
+                onClick={fetchUsers}
+                disabled={loading}
+                color="primary"
+                sx={{
+                  width: { xs: 40 },
+                  height: { xs: 40 }
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
             <Button
               variant="contained"
               startIcon={<AddIcon />}

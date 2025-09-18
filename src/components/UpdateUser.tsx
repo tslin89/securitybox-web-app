@@ -100,7 +100,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
-      backgroundColor: theme.palette.mode === 'dark' 
+      backgroundColor: theme.palette.mode === 'dark'
         ? '#424242'  // Dark gray for dark mode
         : theme.palette.background.paper,  // Light background for light mode
       borderRadius: '8px',
@@ -116,7 +116,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       },
       '&:hover': {
         borderColor: theme.palette.primary.main,
-        backgroundColor: theme.palette.mode === 'dark' 
+        backgroundColor: theme.palette.mode === 'dark'
           ? '#616161'  // Slightly lighter on hover in dark mode
           : theme.palette.background.paper,
       },
@@ -151,11 +151,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       setLoadingUser(true);
       const user = await getUser(userId);
       setOriginalUser(user);
-      
+
       // Find the box for this user
       const userBox = boxList.find(b => b.boxID === (user as any).boxID);
       setSelectedBox(userBox);
-      
+
       setFormData({
         userName: user.userName,
         email: user.email,
@@ -182,8 +182,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              (name === 'userType' || name === 'boxID') ? Number(value) : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+        (name === 'userType' || name === 'boxID') ? Number(value) : value
     }));
   };
 
@@ -266,19 +266,19 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   const handleDelete = async () => {
     if (!originalUser || originalUser.fingerprintNum === undefined) return;
-    
+
     const confirmed = window.confirm(
       `Are you sure you want to delete user "${originalUser.userName}"? This action cannot be undone.`
     );
-    
+
     if (!confirmed) return;
 
     try {
       setLoading(true);
       setError(null);
-      
+
       await deleteUser(originalUser.userID, originalUser.fingerprintNum);
-      
+
       // Call onSuccess to close the dialog and refresh the list
       onSuccess?.();
     } catch (err) {
@@ -343,7 +343,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   return (
     <>
-      <Box sx={{ padding: 3, maxWidth: 600, margin: '0 auto' }}>
+      <Box sx={{ padding: { xs: 0, md: 3 }, maxWidth: 600, margin: '0 auto' }}>
         <Card sx={{ boxShadow: 2 }}>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -361,10 +361,10 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
             <Box>
               {/* Box Selection - Top Row */}
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-                gap: 2, 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
                 mb: 2,
               }}>
                 <FormControl fullWidth variant="filled" sx={textFieldStyles}>
@@ -397,7 +397,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                       ...textFieldStyles,
                       '& .MuiFilledInput-root': {
                         ...textFieldStyles['& .MuiFilledInput-root'],
-                        backgroundColor: theme.palette.mode === 'dark' 
+                        backgroundColor: theme.palette.mode === 'dark'
                           ? '#2e2e2e'  // Darker background for read-only
                           : '#f5f5f5', // Light gray background for read-only
                         cursor: 'default',
@@ -407,10 +407,10 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 )}
               </Box>
 
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-                gap: 2, 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
                 mb: 2,
               }}>
                 <TextField
@@ -460,11 +460,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               />
 
               {changePassword && (
-                <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-                  gap: 2, 
-                  mb: 2 
+                <Box sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                  gap: 2,
+                  mb: 2
                 }}>
                   <TextField
                     fullWidth
@@ -559,14 +559,14 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                     startIcon={<DeleteIcon />}
                     onClick={handleDelete}
                     disabled={loading}
-                    sx={{ 
+                    sx={{
                       backgroundColor: '#d32f2f',
                       '&:hover': {
                         backgroundColor: '#b71c1c',
                       }
                     }}
                   >
-                    {loading ? 'Deleting...' : 'Delete User'}
+                    {loading ? 'Deleting...' : 'Delete'}
                   </Button>
                 )}
                 <Stack direction="row" spacing={2} sx={{ ml: isCurrentUser ? 0 : 'auto' }}>
@@ -583,7 +583,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                     disabled={loading}
                     startIcon={loading ? <CircularProgress size={20} /> : null}
                   >
-                    {loading ? 'Updating...' : 'Update User'}
+                    {loading ? 'Updating...' : 'Update'}
                   </Button>
                 </Stack>
               </Stack>

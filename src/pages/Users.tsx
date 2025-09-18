@@ -1,5 +1,5 @@
 // src/pages/Users.tsx
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 // import Container from '@mui/material/Container';
 // import Card from '@mui/material/Card';
 // import CardContent from '@mui/material/CardContent';
@@ -65,7 +65,7 @@ const Users: React.FC = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh' }}>
+    <Box sx={{ minHeight: '100vh', py: { xs: 0, sm: 3 }, mt: { xs: 8, md: 0 } }} >
       {currentView === 'list' && (
         <UserList onAddUser={handleAddUser} onEditUser={handleEditUser} refreshTrigger={refreshTrigger} />
       )}

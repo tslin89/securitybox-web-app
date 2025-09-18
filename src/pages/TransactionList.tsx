@@ -3,7 +3,8 @@ import * as React from 'react';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import Box from '@mui/material/Box';
 // import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -21,7 +22,7 @@ export default function TransactionList() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 }, mt: { xs: 8, md: 0 } }}>
       <Stack spacing={2} sx={{ mb: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
@@ -32,14 +33,18 @@ export default function TransactionList() {
               View and search your recent parcel transactions.
             </Typography>
           </Box>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefresh}
-            sx={{ minWidth: 120 }}
-          >
-            Refresh
-          </Button>
+          <Tooltip title="Refresh">
+            <IconButton
+              onClick={handleRefresh}
+              color="primary"
+              sx={{
+                width: { xs: 40 },
+                height: { xs: 40 }
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Stack>
       <TransactionsGrid ref={gridRef} />

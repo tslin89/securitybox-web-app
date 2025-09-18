@@ -105,7 +105,7 @@ export default function AppNavbar() {
           >
             <CustomIcon />
             <Typography variant="h4" component="h1" sx={{ color: 'text.primary' }}>
-              Dashboard
+              Winter Security
             </Typography>
           </Stack>
           

@@ -7,7 +7,7 @@ import MainGrid from '../components/MainGrid';
 
 export default function Dashboard() {
   return (
-    <Box sx={{ px: 3, pb: 5, mt: { xs: 8, md: 0 } }}>
+    <Box sx={{ px: 3, pb: 5, mt: { xs: 7, md: 0 } }}>
       <Stack spacing={2} sx={{ alignItems: 'center' }}>
         {/* <Header /> */}
         <MainGrid />

@@ -6,7 +6,8 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
-import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
@@ -45,6 +46,7 @@ export default function MainGrid() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [lastUpdated, setLastUpdated] = React.useState<Date | null>(null);
   const [selectedPeriod, setSelectedPeriod] = React.useState<number>(7);
+  
 
   const fetchData = React.useCallback(async () => {
     try {
@@ -125,7 +127,7 @@ export default function MainGrid() {
   ).map(([code, total]) => ({ label: `${code} ${EVENT_LABELS[code] ?? ''}`, value: total }));
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3 }, px: { xs: 0, sm: 2, md: 3 } }}>
       {/* Header with period dropdown and refresh button */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
@@ -137,7 +139,7 @@ export default function MainGrid() {
           )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
+          <FormControl size="small" sx={{ minWidth: 100 }}>
             <InputLabel>Period</InputLabel>
             <Select
               value={selectedPeriod}
@@ -149,15 +151,19 @@ export default function MainGrid() {
               <MenuItem value={30}>30 days</MenuItem>
             </Select>
           </FormControl>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={handleRefresh}
-            disabled={refreshing}
-            sx={{ minWidth: 120 }}
-          >
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
+          <Tooltip title={refreshing ? 'Refreshing...' : 'Refresh'}>
+            <IconButton
+              onClick={handleRefresh}
+              disabled={refreshing}
+              color="primary"
+              sx={{
+                width: { xs: 40},
+                height: { xs: 40}
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
@@ -216,9 +222,9 @@ export default function MainGrid() {
                   return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
                 })
               }]}
-              series={[{ 
-                data: weightSeries.map(x => x.avgWeight), 
-                label: 'Avg weight (g)', 
+              series={[{
+                data: weightSeries.map(x => x.avgWeight),
+                label: 'Avg weight (g)',
                 area: true,
                 color: '#4255fb' //theme.palette.primary.main
               }]}
