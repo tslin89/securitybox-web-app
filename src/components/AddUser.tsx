@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createUser, checkFingerprintStatus, startFingerprintOnDevice } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -52,7 +52,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     userType: 2,
     boxID: 0,
     fingerprintEnabled: false,
-    userEnabled: true
+    isEnabled: true
   });
 
   const [loading, setLoading] = useState(false);
@@ -61,6 +61,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
   const [fingerprintLoading, setFingerprintLoading] = useState(false);
   const [fingerprintSuccess, setFingerprintSuccess] = useState(false);
   const [selectedBox, setSelectedBox] = useState<any>(null);
+  const [showDismissButton, setShowDismissButton] = useState(false);
+  const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
@@ -166,7 +168,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
         userType: formData.userType,
         boxID: formData.boxID,
         fingerprintEnabled: formData.fingerprintEnabled,
-        userEnabled: formData.userEnabled
+        isEnabled: formData.isEnabled
       });
 
       if (formData.fingerprintEnabled) {
@@ -184,6 +186,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
 
   const startFingerprintSetup = async (userId: number) => {
     setFingerprintLoading(true);
+    setShowDismissButton(true); // Enable dismiss button immediately
 
     console.log('Sending fingerprint setup signal to IoT device for user:', userId);
 
@@ -198,11 +201,12 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     }
 
     // Simulate periodic checking for fingerprint registration
-    const checkInterval = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
         const result = await checkFingerprintStatus(userId);
         if (result.fingerprintNum) {
-          clearInterval(checkInterval);
+          clearInterval(interval);
+          setCheckInterval(null);
           setFingerprintLoading(false);
           setFingerprintSuccess(true);
           setTimeout(() => {
@@ -215,9 +219,14 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
       }
     }, 5000);
 
+    setCheckInterval(interval);
+
     // Cleanup interval after 5 minutes
     setTimeout(() => {
-      clearInterval(checkInterval);
+      if (interval) {
+        clearInterval(interval);
+        setCheckInterval(null);
+      }
       if (fingerprintLoading) {
         setFingerprintLoading(false);
         setError('Fingerprint setup timeout. Please try again.');
@@ -225,6 +234,26 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     }, 300000);
   };
 
+  const handleDismiss = () => {
+    // Clear the interval when dismissing
+    if (checkInterval) {
+      clearInterval(checkInterval);
+      setCheckInterval(null);
+    }
+    setShowFingerprintPopover(false);
+    // Navigate back to user list immediately
+    onSuccess?.(0); // Pass 0 as placeholder userId since we're dismissing
+  };
+
+
+  // Cleanup interval on component unmount
+  useEffect(() => {
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+    };
+  }, [checkInterval]);
 
   return (
     <>
@@ -409,8 +438,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={formData.userEnabled}
-                      onChange={() => handleToggleChange('userEnabled')}
+                      checked={formData.isEnabled}
+                      onChange={() => handleToggleChange('isEnabled')}
                       color="primary"
                     />
                   }
@@ -478,14 +507,28 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
               <Typography variant="h6" gutterBottom>
                 Continue fingerprint setup on IoT device
               </Typography>
-              <Typography color="text.secondary" sx={{ mb: 2 }}>
+              <Typography color="text.secondary">
                 Please follow the instructions on your IoT device to complete the fingerprint registration.
               </Typography>
-              <CircularProgress size={40} />
+              <Typography color="red">
+                You are safe to dismiss this popup and check back later for fingerprint status in User Management.
+              </Typography>
+              <CircularProgress size={40} sx={{ mt: 2 }}/>
+              <Box sx={{ mt: 3 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleDismiss}
+                  disabled={!showDismissButton}
+                  sx={{ minWidth: 120 }}
+                >
+                  Dismiss
+                </Button>
+              </Box>
             </>
           )}
         </DialogContent>
       </Dialog>
+
     </>
   );
 };

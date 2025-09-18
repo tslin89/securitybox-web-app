@@ -7,7 +7,6 @@ import MuiToolbar from '@mui/material/Toolbar';
 import { tabsClasses } from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
-import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import SideMenuMobile from './SideMenuMobile';
 import MenuButton from './MenuButton';
@@ -104,8 +103,8 @@ export default function AppNavbar() {
             sx={{ justifyContent: 'center', mr: 'auto' }}
           >
             <CustomIcon />
-            <Typography variant="h4" component="h1" sx={{ color: 'text.primary' }}>
-              Dashboard
+            <Typography variant="h4" component="h1" sx={{ color: 'text.primary', pl: 1 }}>
+              Winter Security
             </Typography>
           </Stack>
           
@@ -160,7 +159,7 @@ export function CustomIcon() {
         boxShadow: 'inset 0 2px 5px rgba(255, 255, 255, 0.3)',
       }}
     >
-      <DashboardRoundedIcon color="inherit" sx={{ fontSize: '1rem' }} />
+      <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 30, height: 'auto', margin: 1 }} />
     </Box>
   );
 }

@@ -17,7 +17,6 @@ import {
   dataGridCustomizations,
   datePickersCustomizations,
 } from '../theme/customizations';
-import GlobalAlertBanner from '../components/GlobalAlertBanner';
 // import { Typography } from '@mui/material';
 
 const xThemeComponents = {
@@ -55,7 +54,6 @@ export default function AppShell() {
           })}
         >
           <SecondaryBar />
-          <GlobalAlertBanner />
           <ToastCenter />
           <Box sx={{ p: { xs: 2, md: 3 } }}>
             <Outlet />

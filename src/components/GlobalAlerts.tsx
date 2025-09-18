@@ -131,9 +131,9 @@ const GlobalAlerts: React.FC = () => {
         </div>
       </div>
 
-      {/* Alert Stack */}
+      {/* Alert Stack - Only show non-persistent alerts at top */}
       <div style={alertContainerStyle}>
-        {alerts.map((alert) => (
+        {alerts.filter(alert => !alert.persistent).map((alert) => (
           <div
             key={alert.id}
             style={getAlertStyles(alert.severity || 'info')}

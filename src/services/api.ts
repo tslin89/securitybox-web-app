@@ -37,8 +37,8 @@ export const getTransactions = async (
   return data;
 }
 
-export const initiateSignalR = async () => {
-  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/negotiateSignalR?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+export const initiateSignalR = async (userId: number) => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/negotiateSignalR?userId=${userId}&code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
   if (!response.ok) {
     throw new Error('Failed to initiate SignalR');
   }
@@ -60,7 +60,7 @@ export const UserLogin = async (email: string, password: string) => {
     }),
   });
   if (!response.ok) {
-    throw new Error('Login failed');
+    throw new Error(response.statusText);
   }
   return response.json();
 }
@@ -203,7 +203,7 @@ export interface User {
   userType: number;
   fingerprintNum?: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 export interface CreateUserRequest {
@@ -214,7 +214,7 @@ export interface CreateUserRequest {
   userType: number;
   boxID: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 export interface UpdateUserRequest {
@@ -226,7 +226,7 @@ export interface UpdateUserRequest {
   userType: number;
   boxID: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 // User Management API Methods
@@ -326,14 +326,72 @@ export const checkFingerprintStatus = async (userId: number): Promise<{ fingerpr
 };
 
 export async function startFingerprintOnDevice(deviceId: string, userId: number) {
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/fingerprint/start?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // include auth if needed
-    body: JSON.stringify({ deviceId, userId })
+    body: JSON.stringify({ 
+      deviceId, 
+      userId,
+      eventCode: "D001" // add fingerprint
+     })
   });
   if (!res.ok) {
     throw new Error(await res.text());
   }
   return res.json();
 }
+
+// Event Settings API Methods
+
+export interface EventSetting {
+  eventCode: string;
+  eventDescription: string;
+  eventType: number;
+  notificationEnabled: boolean;
+}
+
+export interface EventSettingsResponse {
+  transactionID: string;
+  status: number;
+  message: string;
+  data: EventSetting[];
+}
+
+export interface UpdateEventSettingsRequest {
+  disabledCodes: string[];
+}
+
+export interface UpdateEventSettingsResponse {
+  transactionID: string;
+  status: number;
+  message: string;
+  data: string;
+}
+
+export const getUserEventSettings = async (userId: number): Promise<EventSettingsResponse> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/eventsettings?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch user event settings');
+  }
+
+  return response.json();
+};
+
+export const updateUserEventSettings = async (userId: number, disabledCodes: string[]): Promise<UpdateEventSettingsResponse> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/eventsettings?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ disabledCodes }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to update user event settings');
+  }
+
+  return response.json();
+};

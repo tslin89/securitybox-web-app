@@ -34,7 +34,7 @@ interface SideMenuMobileProps {
   toggleDrawer: (newOpen: boolean) => () => void;
 }
 
-function NavList({ items }: { items: typeof mainNav }) {
+function NavList({ items, onItemClick }: { items: typeof mainNav; onItemClick?: () => void }) {
   return (
     <List sx={{ px: 1 }}>
       {items.map((item) => (
@@ -43,6 +43,7 @@ function NavList({ items }: { items: typeof mainNav }) {
             component={NavLink}
             to={item.to}
             end={item.to === '/dashboard'}
+            onClick={onItemClick}
             // className={({ isActive }) => (isActive ? 'active' : undefined)}
             sx={{
               borderRadius: 2,
@@ -67,7 +68,7 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
   
   const handleMenu = (e: React.MouseEvent<HTMLElement>) => setMenuEl(e.currentTarget);
   const handleClose = () => setMenuEl(null);
-  const go = (path: string) => () => { handleClose(); navigate(path); };
+  const go = (path: string) => () => { handleClose(); navigate(path); toggleDrawer(false)(); };
   // const doLogout = () => { handleClose(); logout?.(); navigate('/'); };
 
   return (
@@ -95,7 +96,7 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
             <Avatar src={user?.avatarUrl} alt={user?.name || 'User'} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography variant="subtitle2" noWrap>
-                {user?.name || 'Unknown'}
+                {user?.userName || 'Unknown'}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap>
                 {user?.email || '???@gmail.com'}
@@ -138,11 +139,11 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
         </Stack>
         <Divider />
         <Stack sx={{ flexGrow: 1 }}>
-          <NavList items={mainNav} />
+          <NavList items={mainNav} onItemClick={toggleDrawer(false)} />
         </Stack>
         <Divider />
         <Stack>
-          <NavList items={secondaryNav as any} />
+          <NavList items={secondaryNav as any} onItemClick={toggleDrawer(false)} />
         </Stack>
         <Stack sx={{ p: 2 }}>
           <Button variant="outlined" fullWidth startIcon={<LogoutRoundedIcon />}>

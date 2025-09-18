@@ -19,7 +19,6 @@ import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import { useNavigate } from 'react-router-dom';
 
 import { UserLogin, ensurePushSubscribed } from '../services/api';
-import { useSignalR } from '../contexts/SignalRContext';
 import { useAuth } from '../contexts/AuthContext';
 
 const Login: React.FC = () => {
@@ -31,7 +30,6 @@ const Login: React.FC = () => {
   const emailRef = useRef<HTMLInputElement>(null);
 
   const { login, isAuthenticated } = useAuth();
-  const { startConnection } = useSignalR();
   const navigate = useNavigate();
 
   // Redirect to dashboard if already authenticated
@@ -82,20 +80,17 @@ const Login: React.FC = () => {
         // Save auth
         login(loginData);
 
-        // Start SignalR
-        await startConnection();
-
         // Subscribe push
         await ensurePushSubscribed(loginData.data.user.userID, loginData.data.token);
 
         // Go to your first protected page
         navigate('/dashboard', { replace: true });
       } else {
-        setError('Login failed. Please check your credentials.');
+        setError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Login failed. Please check your credentials.');
+      setError(`Login failed. ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }

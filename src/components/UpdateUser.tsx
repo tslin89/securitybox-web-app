@@ -60,7 +60,7 @@ interface User {
   boxID?: number;
   fingerprintNum?: number;
   fingerprintEnabled?: boolean;
-  userEnabled?: boolean;
+  isEnabled?: boolean;
 }
 
 interface UpdateUserProps {
@@ -82,7 +82,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     userType: 2,
     boxID: 0,
     fingerprintEnabled: false,
-    userEnabled: true
+    isEnabled: true
   });
 
   const [originalUser, setOriginalUser] = useState<User | null>(null);
@@ -94,13 +94,15 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
   const [fingerprintLoading, setFingerprintLoading] = useState(false);
   const [fingerprintSuccess, setFingerprintSuccess] = useState(false);
   const [selectedBox, setSelectedBox] = useState<any>(null);
+  const [showDismissButton, setShowDismissButton] = useState(false);
+  const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
   // Check if current user is trying to delete themselves
   const isCurrentUser = currentUser && currentUser.userID === userId;
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
-      backgroundColor: theme.palette.mode === 'dark' 
+      backgroundColor: theme.palette.mode === 'dark'
         ? '#424242'  // Dark gray for dark mode
         : theme.palette.background.paper,  // Light background for light mode
       borderRadius: '8px',
@@ -116,7 +118,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       },
       '&:hover': {
         borderColor: theme.palette.primary.main,
-        backgroundColor: theme.palette.mode === 'dark' 
+        backgroundColor: theme.palette.mode === 'dark'
           ? '#616161'  // Slightly lighter on hover in dark mode
           : theme.palette.background.paper,
       },
@@ -151,11 +153,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       setLoadingUser(true);
       const user = await getUser(userId);
       setOriginalUser(user);
-      
+
       // Find the box for this user
       const userBox = boxList.find(b => b.boxID === (user as any).boxID);
       setSelectedBox(userBox);
-      
+
       setFormData({
         userName: user.userName,
         email: user.email,
@@ -165,7 +167,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         userType: user.userType,
         boxID: (user as any).boxID || 0,
         fingerprintEnabled: user.fingerprintEnabled || false,
-        userEnabled: user.userEnabled || true
+        isEnabled: user.isEnabled ?? true
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user');
@@ -178,12 +180,21 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     loadUser();
   }, [loadUser]);
 
+  // Cleanup interval on component unmount
+  useEffect(() => {
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+    };
+  }, [checkInterval]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              (name === 'userType' || name === 'boxID') ? Number(value) : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+        (name === 'userType' || name === 'boxID') ? Number(value) : value
     }));
   };
 
@@ -238,7 +249,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         userType: formData.userType,
         boxID: formData.boxID,
         fingerprintEnabled: formData.fingerprintEnabled,
-        userEnabled: formData.userEnabled
+        isEnabled: formData.isEnabled
       };
 
       if (changePassword) {
@@ -266,19 +277,19 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   const handleDelete = async () => {
     if (!originalUser || originalUser.fingerprintNum === undefined) return;
-    
+
     const confirmed = window.confirm(
       `Are you sure you want to delete user "${originalUser.userName}"? This action cannot be undone.`
     );
-    
+
     if (!confirmed) return;
 
     try {
       setLoading(true);
       setError(null);
-      
+
       await deleteUser(originalUser.userID, originalUser.fingerprintNum);
-      
+
       // Call onSuccess to close the dialog and refresh the list
       onSuccess?.();
     } catch (err) {
@@ -290,6 +301,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   const startFingerprintSetup = async () => {
     setFingerprintLoading(true);
+    setShowDismissButton(true); // Enable dismiss button immediately
 
     // TODO: Send signal to IoT device via IoT Hub
     console.log('Sending fingerprint setup signal to IoT device for user:', userId);
@@ -305,11 +317,12 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     }
 
     // Simulate periodic checking for fingerprint registration
-    const checkInterval = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
         const result = await checkFingerprintStatus(userId);
         if (result.fingerprintNum && result.fingerprintNum !== originalUser?.fingerprintNum) {
-          clearInterval(checkInterval);
+          clearInterval(interval);
+          setCheckInterval(null);
           setFingerprintLoading(false);
           setFingerprintSuccess(true);
           setTimeout(() => {
@@ -322,14 +335,30 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       }
     }, 5000);
 
+    setCheckInterval(interval);
+
     // Cleanup interval after 5 minutes
     setTimeout(() => {
-      clearInterval(checkInterval);
+      if (interval) {
+        clearInterval(interval);
+        setCheckInterval(null);
+      }
       if (fingerprintLoading) {
         setFingerprintLoading(false);
         setError('Fingerprint setup timeout. Please try again.');
       }
     }, 300000);
+  };
+
+  const handleDismiss = () => {
+    // Clear the interval when dismissing
+    if (checkInterval) {
+      clearInterval(checkInterval);
+      setCheckInterval(null);
+    }
+    setShowFingerprintPopover(false);
+    // Navigate back to user list immediately
+    onSuccess?.();
   };
 
 
@@ -343,7 +372,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   return (
     <>
-      <Box sx={{ padding: 3, maxWidth: 600, margin: '0 auto' }}>
+      <Box sx={{ padding: { xs: 0, md: 3 }, maxWidth: 600, margin: '0 auto' }}>
         <Card sx={{ boxShadow: 2 }}>
           <CardContent sx={{ p: 3 }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -361,10 +390,10 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
             <Box>
               {/* Box Selection - Top Row */}
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-                gap: 2, 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
                 mb: 2,
               }}>
                 <FormControl fullWidth variant="filled" sx={textFieldStyles}>
@@ -397,7 +426,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                       ...textFieldStyles,
                       '& .MuiFilledInput-root': {
                         ...textFieldStyles['& .MuiFilledInput-root'],
-                        backgroundColor: theme.palette.mode === 'dark' 
+                        backgroundColor: theme.palette.mode === 'dark'
                           ? '#2e2e2e'  // Darker background for read-only
                           : '#f5f5f5', // Light gray background for read-only
                         cursor: 'default',
@@ -407,10 +436,10 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 )}
               </Box>
 
-              <Box sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-                gap: 2, 
+              <Box sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                gap: 2,
                 mb: 2,
               }}>
                 <TextField
@@ -460,11 +489,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               />
 
               {changePassword && (
-                <Box sx={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
-                  gap: 2, 
-                  mb: 2 
+                <Box sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                  gap: 2,
+                  mb: 2
                 }}>
                   <TextField
                     fullWidth
@@ -542,8 +571,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               <FormControlLabel
                 control={
                   <Switch
-                    checked={formData.userEnabled}
-                    onChange={() => handleToggleChange('userEnabled')}
+                    checked={formData.isEnabled}
+                    onChange={() => handleToggleChange('isEnabled')}
                     color="primary"
                   />
                 }
@@ -559,14 +588,14 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                     startIcon={<DeleteIcon />}
                     onClick={handleDelete}
                     disabled={loading}
-                    sx={{ 
+                    sx={{
                       backgroundColor: '#d32f2f',
                       '&:hover': {
                         backgroundColor: '#b71c1c',
                       }
                     }}
                   >
-                    {loading ? 'Deleting...' : 'Delete User'}
+                    {loading ? 'Deleting...' : 'Delete'}
                   </Button>
                 )}
                 <Stack direction="row" spacing={2} sx={{ ml: isCurrentUser ? 0 : 'auto' }}>
@@ -583,7 +612,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                     disabled={loading}
                     startIcon={loading ? <CircularProgress size={20} /> : null}
                   >
-                    {loading ? 'Updating...' : 'Update User'}
+                    {loading ? 'Updating...' : 'Update'}
                   </Button>
                 </Stack>
               </Stack>
@@ -619,14 +648,28 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               <Typography variant="h6" gutterBottom>
                 Continue fingerprint setup on IoT device
               </Typography>
-              <Typography color="text.secondary" sx={{ mb: 2 }}>
+              <Typography color="text.secondary">
                 Please follow the instructions on your IoT device to complete the fingerprint registration.
               </Typography>
-              <CircularProgress size={40} />
+              <Typography color="red">
+                You are safe to dismiss this popup and check back later for fingerprint status in User Management.
+              </Typography>
+              <CircularProgress size={40} sx={{ mt: 2 }}/>
+              <Box sx={{ mt: 3 }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleDismiss}
+                  disabled={!showDismissButton}
+                  sx={{ minWidth: 120 }}
+                >
+                  Dismiss
+                </Button>
+              </Box>
             </>
           )}
         </DialogContent>
       </Dialog>
+
     </>
   );
 };

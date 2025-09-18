@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import { useTheme } from '@mui/material/styles';
@@ -25,6 +25,10 @@ export type TxRow = {
   totalWeight: number;
   boxPosition: number;
 };
+
+export interface TransactionsGridRef {
+  refresh: () => void;
+}
 
 type ApiResponse = {
   transactionID: string;
@@ -58,7 +62,7 @@ function eventLabel(code: string) {
   }
 }
 
-export default function TransactionsGrid() {
+const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
@@ -168,6 +172,11 @@ export default function TransactionsGrid() {
     }
   }
 
+  // Expose refresh function to parent component
+  useImperativeHandle(ref, () => ({
+    refresh: fetchPage
+  }), [user?.userID, paginationModel.page, paginationModel.pageSize]);
+
   // load on page/pageSize/user change
   useEffect(() => {
     fetchPage();
@@ -215,4 +224,8 @@ export default function TransactionsGrid() {
         />
       </Box>
   );
-}
+});
+
+TransactionsGrid.displayName = 'TransactionsGrid';
+
+export default TransactionsGrid;
