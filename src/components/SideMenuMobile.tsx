@@ -62,14 +62,19 @@ function NavList({ items, onItemClick }: { items: typeof mainNav; onItemClick?: 
 }
 
 export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobileProps) {
-  const { user } = useAuth() as any;
+  const { user, logout } = useAuth() as any;
   const [menuEl, setMenuEl] = React.useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   
   const handleMenu = (e: React.MouseEvent<HTMLElement>) => setMenuEl(e.currentTarget);
   const handleClose = () => setMenuEl(null);
   const go = (path: string) => () => { handleClose(); navigate(path); toggleDrawer(false)(); };
-  // const doLogout = () => { handleClose(); logout?.(); navigate('/'); };
+  const doLogout = () => { 
+    handleClose(); 
+    logout?.(); 
+    navigate('/'); 
+    toggleDrawer(false)();
+  };
 
   return (
     <Drawer
@@ -146,7 +151,7 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
           <NavList items={secondaryNav as any} onItemClick={toggleDrawer(false)} />
         </Stack>
         <Stack sx={{ p: 2 }}>
-          <Button variant="outlined" fullWidth startIcon={<LogoutRoundedIcon />}>
+          <Button variant="outlined" fullWidth startIcon={<LogoutRoundedIcon />} onClick={doLogout}>
             Logout
           </Button>
         </Stack>

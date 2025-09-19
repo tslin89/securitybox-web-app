@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { UserLogin, ensurePushSubscribed } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '@mui/material/styles';
 
 const Login: React.FC = () => {
   const [email, setUseremail] = useState('');
@@ -28,6 +29,7 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const emailRef = useRef<HTMLInputElement>(null);
+  const theme = useTheme();
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -106,10 +108,11 @@ const Login: React.FC = () => {
       sx={{
         minHeight: '100svh',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: { xs: 'top', sm: 'center'},
         justifyContent: 'center',
-        bgcolor: (t) => t.palette.mode === 'light' ? 'grey.50' : 'background.default',
-        px: 2,
+        bgcolor: { xs: 'transparent', sm: (t) => t.palette.mode === 'light' ? 'grey.50' : 'background.default' },
+        px: { xs: 0, sm: 2},
+        mt: { xs: 10, sm: 'auto'}
       }}
     >
       <Container maxWidth="xs" disableGutters>
@@ -118,14 +121,17 @@ const Login: React.FC = () => {
           sx={{
             maxWidth: 300,
             p: { xs: 3, sm: 5 },
-            borderRadius: 3,
+            borderRadius: { xs: 0, sm: 2 },
+            backgroundColor: { xs: 'transparent', sm: (t) => t.palette.mode === 'light' ? 'grey.50' : 'background.default' },
+            border: { xs: 'none', sm: `1px solid ${theme.palette.divider}` },
+            boxShadow: { xs: 0, sm: 2 }
           }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
               <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 50, height: 'auto', marginBottom: 2 }} />
             </Box>
-            <Typography component="h2" variant="h6" sx={{ fontWeight: 600 }}>
+            <Typography component="h2" variant="h6" sx={{ fontWeight: 600, textAlign: 'center' }}>
               Winter Security System Login
             </Typography>
 
