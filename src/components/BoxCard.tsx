@@ -58,7 +58,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
 
       const response = await unlockDevice(box.deviceID, user.userID);
       if (response.status === 1) {
-        setSnackbarMessage('Device unlock signal sent successfully.');
+        setSnackbarMessage('Pause security command sent successfully to selected device.');
         setSnackbarOpen(true);
       }
       else {
@@ -67,8 +67,8 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
       }
 
     } catch (error) {
-      console.error('Failed to unlock device:', error);
-      setSnackbarMessage('Failed to unlock device');
+      console.error('Failed to pause security on selected device:', error);
+      setSnackbarMessage('Failed to pause security on selected device');
       setSnackbarOpen(true);
     } finally {
       setIsUnlocking(false);
@@ -216,7 +216,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
             disabled={isUnlocking}
             size="small"
           >
-            {isUnlocking ? 'Unlocking...' : 'Unlock'}
+            {isUnlocking ? 'Pausing...' : 'Pause Security'}
           </Button>
 
 
