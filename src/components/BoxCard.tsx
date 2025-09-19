@@ -12,18 +12,15 @@ import {
   Alert,
   CircularProgress,
   useTheme,
-  Divider,
 } from '@mui/material';
 import {
-  Lock as LockIcon,
   LockOpen as LockOpenIcon,
   Refresh as RefreshIcon,
   Security as SecurityIcon,
   Scale as ScaleIcon,
   Schedule as ScheduleIcon,
-  DeviceHub as DeviceIcon,
 } from '@mui/icons-material';
-import { BoxData, getLastEventData, unlockDevice } from '../services/api';
+import { BoxData, unlockDevice } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
 
@@ -61,7 +58,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
 
       const response = await unlockDevice(box.deviceID, user.userID);
       if (response.status === 1) {
-        setSnackbarMessage('Device unlock signal sent successfully');
+        setSnackbarMessage('Device unlock signal sent successfully.');
         setSnackbarOpen(true);
       }
       else {
@@ -109,7 +106,6 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
   const doorState = getDoorStateInfo();
   const boxPosition = getBoxPositionInfo();
   const weightInfo = getWeightInfo();
-  const hasData = box.receivedTime !== null;
   const isDataAvailable = box.receivedTime !== null;
 
   return (

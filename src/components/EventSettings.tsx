@@ -61,12 +61,7 @@ export default function EventSettings({ userId }: EventSettingsProps) {
   const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success');
   const [disabledCodes, setDisabledCodes] = React.useState<Set<string>>(new Set());
 
-  // Load event settings on component mount
-  React.useEffect(() => {
-    loadEventSettings();
-  }, [userId]);
-
-  const loadEventSettings = async () => {
+  const loadEventSettings = React.useCallback(async () => {
     try {
       setLoading(true);
       const response = await getUserEventSettings(userId);
@@ -87,7 +82,12 @@ export default function EventSettings({ userId }: EventSettingsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Load event settings on component mount
+  React.useEffect(() => {
+    loadEventSettings();
+  }, [loadEventSettings]);
 
   const handleCheckboxChange = (eventCode: string, checked: boolean) => {
     const newDisabledCodes = new Set(disabledCodes);

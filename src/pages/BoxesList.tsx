@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Box,
   Button,
-  useTheme,
 } from "@mui/material";
 import { Refresh as RefreshIcon } from '@mui/icons-material';
 import { BoxData, getLastEventData } from '../services/api';
@@ -15,7 +14,6 @@ import { useAuth } from '../contexts/AuthContext';
 import BoxCard from '../components/BoxCard';
 
 export default function BoxesList() {
-  const theme = useTheme();
   const { user } = useAuth();
   const [boxes, setBoxes] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
