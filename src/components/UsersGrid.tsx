@@ -68,6 +68,24 @@ const UsersGrid = forwardRef<UsersGridRef, { onEditUser: (user: User) => void }>
 
   const columns: GridColDef[] = useMemo(() => [
     {
+      field: 'actions',
+      headerName: '-',
+      width: 60,
+      sortable: false,
+      filterable: false,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => (
+        <IconButton
+          onClick={() => onEditUser(params.row)}
+          color="primary"
+          size="small"
+        >
+          <EditIcon />
+        </IconButton>
+      ),
+    },
+    {
       field: 'userID',
       headerName: 'ID',
       width: 80,
@@ -131,22 +149,7 @@ const UsersGrid = forwardRef<UsersGridRef, { onEditUser: (user: User) => void }>
         );
       },
     },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 80,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <IconButton
-          onClick={() => onEditUser(params.row)}
-          color="primary"
-          size="small"
-        >
-          <EditIcon />
-        </IconButton>
-      ),
-    },
+    
   ], [onEditUser]);
 
   if (error) {
@@ -201,9 +204,7 @@ const UsersGrid = forwardRef<UsersGridRef, { onEditUser: (user: User) => void }>
           '& .MuiDataGrid-row:hover': {
             backgroundColor: 'action.hover',
           },
-          '& .MuiDataGrid-row:nth-of-type(even)': {
-            backgroundColor: 'grey.50',
-          },
+          
         }}
       />
     </Box>

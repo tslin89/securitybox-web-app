@@ -103,7 +103,7 @@ export default function AppNavbar() {
             sx={{ justifyContent: 'center', mr: 'auto' }}
           >
             <CustomIcon />
-            <Typography variant="h4" component="h1" sx={{ color: 'text.primary', pl: 1 }}>
+            <Typography variant="h4" component="h1" sx={{ color: 'text.primary', pl: 1, fontSize: { xs: '1rem', sm: '1.5rem' } }}>
               Winter Security
             </Typography>
           </Stack>
@@ -159,7 +159,7 @@ export function CustomIcon() {
         boxShadow: 'inset 0 2px 5px rgba(255, 255, 255, 0.3)',
       }}
     >
-      <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 30, height: 'auto', margin: 1 }} />
+      <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: { xs: 30, sm: 40 }, height: 'auto', margin: 1 }} />
     </Box>
   );
 }

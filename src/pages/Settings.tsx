@@ -64,7 +64,7 @@ export default function Settings() {
 
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 3, md: 0 }, mt: { xs: 5, md: 0 }, px: { xs: 0, sm: 0 }  }}>
         <Stack spacing={2} sx={{ mb: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Settings
@@ -80,7 +80,7 @@ export default function Settings() {
           </Alert>
         )}
 
-        <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}>
+        <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1 }}>
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             Notifications
           </Typography>
