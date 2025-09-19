@@ -69,7 +69,7 @@ export default function EventSettings({ userId }: EventSettingsProps) {
       setMessage(null);
       const response = await getUserEventSettings(userId);
       setEventSettings(response.data);
-      
+
       // Initialize disabled codes based on notificationEnabled status
       const disabled = new Set<string>();
       response.data.forEach(setting => {
@@ -99,10 +99,10 @@ export default function EventSettings({ userId }: EventSettingsProps) {
     try {
       setSaving(true);
       setMessage(null);
-      
+
       const disabledCodesArray = Array.from(disabledCodes);
       await updateUserEventSettings(userId, disabledCodesArray);
-      
+
       setMessage({ type: 'success', text: 'Event settings updated successfully' });
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update event settings' });
@@ -120,11 +120,11 @@ export default function EventSettings({ userId }: EventSettingsProps) {
   }
 
   return (
-    <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1 }}>
-      <Typography variant="h6" sx={{ mb: 1.5 }}>
+    <Paper elevation={1} sx={{ p: { xs: 0, sm: 3 }, borderRadius: 1 }}>
+      <Typography variant="h6" sx={{ mb: 1.5 , m: { xs: 2}}}>
         Event Notifications
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ m: { xs: 2 } }}>
         Configure which events should trigger notifications.
       </Typography>
 
@@ -174,7 +174,7 @@ export default function EventSettings({ userId }: EventSettingsProps) {
         </Table>
       </TableContainer>
 
-      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+      <Box sx={{ mt: 2, pb: { xs: 2, sm: 0 }, display: 'flex', justifyContent: { xs: 'center', sm: 'flex-end' } }}>
         <Button
           variant="contained"
           onClick={handleSave}
