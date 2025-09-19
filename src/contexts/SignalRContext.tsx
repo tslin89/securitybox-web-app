@@ -474,7 +474,8 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                 setConnection(newConnection);
                 updateConnectionStateRef.current(newConnection);
                 setStatus('connected'); // Update status to connected
-                addAlert("Real-time connection established", 'success', false);
+                //addAlert("Real-time connection established", 'success', false);
+                console.log("Real-time connection established");
 
                 // Start health monitoring
                 startConnectionHealthCheck();

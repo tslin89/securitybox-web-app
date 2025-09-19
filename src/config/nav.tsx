@@ -5,6 +5,7 @@ import GroupRounded from '@mui/icons-material/GroupRounded';
 import ReceiptLongRounded from '@mui/icons-material/ReceiptLongRounded';
 import SettingsRounded from '@mui/icons-material/SettingsRounded';
 import InfoRounded from '@mui/icons-material/InfoRounded';
+import { StorageRounded } from '@mui/icons-material';
 
 export type NavItem = { label: string; to: string; icon: React.ReactNode };
 
@@ -12,6 +13,7 @@ export const mainNav: NavItem[] = [
   { label: 'Dashboard',         to: '/dashboard', icon: <HomeRounded /> },
   { label: 'Users',      to: '/users',     icon: <GroupRounded /> },
   { label: 'Transactions', to: '/translist', icon: <ReceiptLongRounded /> },
+  { label: 'Boxes', to: '/boxlist', icon: <StorageRounded /> },
 ];
 
 export const secondaryNav: NavItem[] = [

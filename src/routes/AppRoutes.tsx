@@ -12,6 +12,7 @@ import Profile from '../pages/Profile';
 import Account from '../pages/Account';
 import AddAccount from '../pages/AddAccount';
 import { useAuth } from '../contexts/AuthContext';
+import BoxesList from '../pages/BoxesList';
 
 /** Show children only when NOT authed. If authed, go to dashboard. */
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -48,6 +49,7 @@ export default function AppRoutes() {
             <Route path="profile" element={<Profile />} />
             <Route path="account" element={<Account />} />
             <Route path="add-account" element={<AddAccount />} />
+            <Route path="boxlist" element={<BoxesList />} />
           </Route>
         </Route>
 
