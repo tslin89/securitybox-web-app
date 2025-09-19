@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { CssVarsProvider, useColorScheme } from '@mui/material/styles';
 import type { ThemeOptions } from '@mui/material/styles';
 import { inputsCustomizations } from './customizations/inputs';
 import { dataDisplayCustomizations } from './customizations/dataDisplay';
@@ -17,11 +18,23 @@ interface AppThemeProps {
   themeComponents?: ThemeOptions['components'];
 }
 
+// Wrapper component to ensure color scheme is properly initialized
+function ColorSchemeProvider({ children }: { children: React.ReactNode }) {
+  const { setMode } = useColorScheme();
+  
+  React.useEffect(() => {
+    // Initialize with light mode if no mode is set
+    setMode('light');
+  }, [setMode]);
+
+  return <>{children}</>;
+}
+
 export default function AppTheme(props: AppThemeProps) {
   const { children, disableCustomTheme, themeComponents } = props;
   const theme = React.useMemo(() => {
     return disableCustomTheme
-      ? {}
+      ? createTheme()
       : createTheme({
           // For more details about CSS variables configuration, see https://mui.com/material-ui/customization/css-theme-variables/configuration/
           cssVariables: {
@@ -38,7 +51,7 @@ export default function AppTheme(props: AppThemeProps) {
             ...feedbackCustomizations,
             ...navigationCustomizations,
             ...surfacesCustomizations,
-            ...themeComponents,
+            ...(themeComponents || {}),
           },
         });
   }, [disableCustomTheme, themeComponents]);
@@ -46,8 +59,10 @@ export default function AppTheme(props: AppThemeProps) {
     return <React.Fragment>{children}</React.Fragment>;
   }
   return (
-    <ThemeProvider theme={theme} disableTransitionOnChange>
-      {children}
-    </ThemeProvider>
+    <CssVarsProvider theme={theme} defaultMode="light">
+      <ColorSchemeProvider>
+        {children}
+      </ColorSchemeProvider>
+    </CssVarsProvider>
   );
 }
