@@ -216,7 +216,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
             disabled={isUnlocking}
             size="small"
           >
-            {isUnlocking ? 'Unlocking...' : 'Unlock'}
+            {isUnlocking ? 'Pausing...' : 'Pause Security'}
           </Button>
 
 
