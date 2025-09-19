@@ -1,10 +1,10 @@
 import SHA256 from "crypto-js/sha256";
 var AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.net/api';
 
-// if (window.location.hostname === 'localhost') {
-//   AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
-//   // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
-// }
+if (window.location.hostname === 'localhost') {
+  AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
+  // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
+}
 
 // interface Transaction {
 //   id: number;
@@ -358,6 +358,30 @@ export interface EventSettingsResponse {
   data: EventSetting[];
 }
 
+// Box Status API Types
+export interface BoxData {
+  deviceID: string;
+  description: string;
+  timeStamp: string | null;
+  id: number;
+  boxID: number;
+  eventCode: string | null;
+  doorState: number | null; // 1=open, 0=close
+  fingerprintNum: number | null;
+  totalWeight: number | null; // in grams
+  boxPosition: number | null;
+  userID: number | null;
+  transactionID: string | null;
+  receivedTime: string | null;
+}
+
+export interface BoxStatusResponse {
+  transactionID: string;
+  status: number;
+  message: string;
+  data: BoxData[];
+}
+
 export interface UpdateEventSettingsRequest {
   disabledCodes: string[];
 }
@@ -395,3 +419,48 @@ export const updateUserEventSettings = async (userId: number, disabledCodes: str
 
   return response.json();
 };
+
+export const getLastEventData = async (userId: number, boxID: number = 0): Promise<BoxStatusResponse> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/transactions/lastevent?userId=${userId}&boxID=${boxID}&code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch last event data');
+  }
+
+  return response.json();
+};
+
+export async function unlockDevice(deviceId: string, userId: number) {
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // include auth if needed
+    body: JSON.stringify({ 
+      deviceId, 
+      userId,
+      eventCode: "D003" // unlock security
+     })
+  });
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json();
+}
+
+
+export async function deleteFingerprint(deviceId: string, userId: number) {
+  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // include auth if needed
+    body: JSON.stringify({ 
+      deviceId, 
+      userId,
+      eventCode: "D002" // unlock security
+     })
+  });
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json();
+}

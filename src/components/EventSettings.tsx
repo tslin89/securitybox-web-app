@@ -14,6 +14,7 @@ import {
   Box,
   Chip,
   CircularProgress,
+  Snackbar,
 } from '@mui/material';
 import { getUserEventSettings, updateUserEventSettings, EventSetting } from '../services/api';
 
@@ -55,7 +56,9 @@ export default function EventSettings({ userId }: EventSettingsProps) {
   const [eventSettings, setEventSettings] = React.useState<EventSetting[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const [message, setMessage] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+  const [snackbarMessage, setSnackbarMessage] = React.useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success');
   const [disabledCodes, setDisabledCodes] = React.useState<Set<string>>(new Set());
 
   // Load event settings on component mount
@@ -66,7 +69,6 @@ export default function EventSettings({ userId }: EventSettingsProps) {
   const loadEventSettings = async () => {
     try {
       setLoading(true);
-      setMessage(null);
       const response = await getUserEventSettings(userId);
       setEventSettings(response.data);
 
@@ -79,7 +81,9 @@ export default function EventSettings({ userId }: EventSettingsProps) {
       });
       setDisabledCodes(disabled);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to load event settings' });
+      setSnackbarMessage('Failed to load event settings');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -98,14 +102,17 @@ export default function EventSettings({ userId }: EventSettingsProps) {
   const handleSave = async () => {
     try {
       setSaving(true);
-      setMessage(null);
 
       const disabledCodesArray = Array.from(disabledCodes);
       await updateUserEventSettings(userId, disabledCodesArray);
 
-      setMessage({ type: 'success', text: 'Event settings updated successfully' });
+      setSnackbarMessage('Event settings updated successfully');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update event settings' });
+      setSnackbarMessage('Failed to update event settings');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     } finally {
       setSaving(false);
     }
@@ -127,12 +134,6 @@ export default function EventSettings({ userId }: EventSettingsProps) {
       <Typography variant="body2" color="text.secondary" sx={{ m: { xs: 2 } }}>
         Configure which events should trigger notifications.
       </Typography>
-
-      {message && (
-        <Alert severity={message.type} sx={{ mb: 2 }}>
-          {message.text}
-        </Alert>
-      )}
 
       <TableContainer>
         <Table>
@@ -184,6 +185,21 @@ export default function EventSettings({ userId }: EventSettingsProps) {
           {saving ? 'Saving...' : 'Save Settings'}
         </Button>
       </Box>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 }

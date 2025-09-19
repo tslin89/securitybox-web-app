@@ -23,7 +23,7 @@ export default function TransactionList() {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 3, md: 0 }, mt: { xs: 5, md: 0 }, px: { xs: 0, sm: 0 }  }}>
-      <Stack spacing={2} sx={{ mb: 1 }}>
+      <Stack spacing={2} sx={{ mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
