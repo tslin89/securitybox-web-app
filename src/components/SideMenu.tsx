@@ -124,7 +124,7 @@ export default function SideMenu() {
           <Avatar src={user?.avatarUrl} alt={user?.name || 'User'} />
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="subtitle2" noWrap>
-              {user?.name || 'TS.Lin'}
+              {user?.userName || 'Unknown'}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
               {user?.email || 'tslin@gmail.com'}
