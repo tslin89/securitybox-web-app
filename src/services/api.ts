@@ -421,7 +421,7 @@ export const updateUserEventSettings = async (userId: number, disabledCodes: str
 };
 
 export const getLastEventData = async (userId: number, boxID: number = 0): Promise<BoxStatusResponse> => {
-  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/transactions/lastevent?userId=${userId}&boxID=${boxID}&code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/transactions/lastevent?userId=${userId}&boxID=${boxID}&code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`);
   
   if (!response.ok) {
     throw new Error('Failed to fetch last event data');
@@ -448,7 +448,7 @@ export async function unlockDevice(deviceId: string, userId: number) {
 }
 
 
-export async function deleteFingerprint(deviceId: string, userId: number) {
+export async function deleteFingerprint(deviceId: string, userId: number, fingerprintNum: number) {
   const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -456,6 +456,7 @@ export async function deleteFingerprint(deviceId: string, userId: number) {
     body: JSON.stringify({ 
       deviceId, 
       userId,
+      fingerprintNum,
       eventCode: "D002" // unlock security
      })
   });

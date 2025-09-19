@@ -165,7 +165,6 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
       });
 
       if (formData.fingerprintEnabled) {
-        setShowFingerprintPopover(true);
         startFingerprintSetup(userID);
       } else {
         onSuccess?.(userID);
@@ -178,20 +177,29 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
   };
 
   const startFingerprintSetup = async (userId: number) => {
-    setFingerprintLoading(true);
-    setShowDismissButton(true); // Enable dismiss button immediately
-
     console.log('Sending fingerprint setup signal to IoT device for user:', userId);
 
     // Start fingerprint setup
     try {
-      await startFingerprintOnDevice(selectedBox?.deviceID || "demo-device-raspberrypi", userId);
+      const response = await startFingerprintOnDevice(selectedBox?.deviceID, userId);
+      console.log('Fingerprint setup response:', response);
+      if (response.status !== 1) {
+        const errorMessage = response.message || 'Failed to start fingerprint setup. Please try again.';
+        alert(`User account was created but unable to initiate fingerprint registration on selected security box. Please try again later.\n\nError: ${errorMessage}`);
+        onSuccess?.(userId); // Redirect to user list since user creation was successful
+        return;
+      }
     } catch (err) {
       console.error('Error starting fingerprint setup:', err);
-      setFingerprintLoading(false);
       setError('Failed to start fingerprint setup. Please try again.');
+      onSuccess?.(userId); // Redirect to user list since user creation was successful
       return;
     }
+
+    // Only show popup and start interval checking if startFingerprintOnDevice was successful
+    setFingerprintLoading(true);
+    setShowDismissButton(true); // Enable dismiss button immediately
+    setShowFingerprintPopover(true);
 
     // Simulate periodic checking for fingerprint registration
     const interval = setInterval(async () => {

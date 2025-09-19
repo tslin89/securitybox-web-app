@@ -1,4 +1,4 @@
-import { updateUser, getUser, checkFingerprintStatus, startFingerprintOnDevice, deleteUser } from '../services/api';
+import { updateUser, getUser, checkFingerprintStatus, startFingerprintOnDevice, deleteUser, deleteFingerprint } from '../services/api';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,6 +16,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
+  DialogContentText,
   Stack,
   Chip,
   FormControl,
@@ -96,6 +98,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
   const [selectedBox, setSelectedBox] = useState<any>(null);
   const [showDismissButton, setShowDismissButton] = useState(false);
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  const [showFingerprintDialog, setShowFingerprintDialog] = useState(false);
+  const [fingerprintError, setFingerprintError] = useState<string | null>(null);
 
   // Check if current user is trying to delete themselves
   const isCurrentUser = currentUser && currentUser.userID === userId;
@@ -256,7 +260,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         (!originalUser?.fingerprintEnabled || !originalUser?.fingerprintNum);
 
       if (needsFingerprintSetup) {
-        setShowFingerprintPopover(true);
         startFingerprintSetup();
       } else {
         onSuccess?.();
@@ -269,7 +272,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
   };
 
   const handleDelete = async () => {
-    if (!originalUser || originalUser.fingerprintNum === undefined) return;
+    if (!originalUser) return;
 
     const confirmed = window.confirm(
       `Are you sure you want to delete user "${originalUser.userName}"? This action cannot be undone.`
@@ -277,11 +280,48 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
     if (!confirmed) return;
 
+    // Check if user has fingerprint enabled and fingerprintNum
+    if (originalUser.fingerprintEnabled && originalUser.fingerprintNum && originalUser.boxID) {
+      // Find the deviceId for the user's box
+      const userBox = boxList.find(box => box.boxID === originalUser.boxID);
+      
+      if (userBox) {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          // Try to delete fingerprint from device
+          const response = await deleteFingerprint(userBox.deviceID, originalUser.userID, originalUser.fingerprintNum);
+          
+          if (response.status !== 1) {
+            // Fingerprint deletion failed, show confirmation dialog
+            setFingerprintError(response.message || 'Unable to remove fingerprint on the device');
+            setShowFingerprintDialog(true);
+            return;
+          }
+        } catch (err) {
+          // Fingerprint deletion failed, show confirmation dialog
+          setFingerprintError('Unable to remove fingerprint on the device');
+          setShowFingerprintDialog(true);
+          return;
+        }
+      }
+    }
+
+    // Proceed with normal user deletion
+    await performUserDeletion();
+  };
+
+  const performUserDeletion = async () => {
+    if (!originalUser) return;
+
     try {
       setLoading(true);
       setError(null);
 
-      await deleteUser(originalUser.userID, originalUser.fingerprintNum);
+      // Use 0 as default if fingerprintNum is undefined
+      const fingerprintNum = originalUser.fingerprintNum ?? 0;
+      await deleteUser(originalUser.userID, fingerprintNum);
 
       // Call onSuccess to close the dialog and refresh the list
       onSuccess?.();
@@ -292,22 +332,41 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     }
   };
 
-  const startFingerprintSetup = async () => {
-    setFingerprintLoading(true);
-    setShowDismissButton(true); // Enable dismiss button immediately
+  const handleFingerprintDialogConfirm = async () => {
+    setShowFingerprintDialog(false);
+    setFingerprintError(null);
+    await performUserDeletion();
+  };
 
-    // TODO: Send signal to IoT device via IoT Hub
+  const handleFingerprintDialogCancel = () => {
+    setShowFingerprintDialog(false);
+    setFingerprintError(null);
+    setLoading(false);
+  };
+
+  const startFingerprintSetup = async () => {
     console.log('Sending fingerprint setup signal to IoT device for user:', userId);
 
     // Start fingerprint setup
     try {
-      await startFingerprintOnDevice(selectedBox?.deviceID || "demo-device-raspberrypi", userId);
+      const response = await startFingerprintOnDevice(selectedBox?.deviceID || "demo-device-raspberrypi", userId);
+      if (response.status !== 1) {
+        const errorMessage = response.message || 'Failed to start fingerprint setup. Please try again.';
+        alert(`User account was created but unable to initiate fingerprint registration on selected security box. Please try again later.\n\nError: ${errorMessage}`);
+        onSuccess?.(); // Redirect to user list since user update was successful
+        return;
+      }
     } catch (err) {
       console.error('Error starting fingerprint setup:', err);
-      setFingerprintLoading(false);
       setError('Failed to start fingerprint setup. Please try again.');
+      onSuccess?.(); // Redirect to user list since user update was successful
       return;
     }
+
+    // Only show popup and start interval checking if startFingerprintOnDevice was successful
+    setFingerprintLoading(true);
+    setShowDismissButton(true); // Enable dismiss button immediately
+    setShowFingerprintPopover(true);
 
     // Simulate periodic checking for fingerprint registration
     const interval = setInterval(async () => {
@@ -537,7 +596,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 <option value={2}>User</option>
               </TextField>
 
-
               <FormControlLabel
                 control={
                   <Switch
@@ -550,7 +608,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 sx={{ mb: 2 }}
               />
 
-              {originalUser?.fingerprintNum && (
+                {(originalUser?.fingerprintNum && originalUser.fingerprintNum > 0) ? (
                 <Box sx={{
                   backgroundColor: theme.palette.action.hover,
                   padding: 2,
@@ -561,12 +619,12 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                   gap: 1
                 }}>
                   <Chip
-                    label={`Fingerprint ID: ${originalUser.fingerprintNum}`}
+                    label={`Fingerprint ID: ${originalUser?.fingerprintNum}`}
                     color="primary"
                     variant="outlined"
                   />
                 </Box>
-              )}
+                ) : null}
 
               <FormControlLabel
                 control={
@@ -668,6 +726,31 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
             </>
           )}
         </DialogContent>
+      </Dialog>
+
+      {/* Fingerprint Deletion Confirmation Dialog */}
+      <Dialog
+        open={showFingerprintDialog}
+        onClose={handleFingerprintDialogCancel}
+        aria-labelledby="fingerprint-dialog-title"
+        aria-describedby="fingerprint-dialog-description"
+      >
+        <DialogTitle id="fingerprint-dialog-title">
+          Unable to Remove Fingerprint
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="fingerprint-dialog-description">
+            {fingerprintError || 'Unable to remove fingerprint on the device. Do you want to continue deleting this user?'}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleFingerprintDialogCancel} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleFingerprintDialogConfirm} color="error" variant="contained">
+            Yes, Delete User
+          </Button>
+        </DialogActions>
       </Dialog>
 
     </>
