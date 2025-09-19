@@ -58,7 +58,7 @@ function eventLabel(code: string) {
     case 'C009': return 'Box stolen';
     case 'C010': return 'Box returned';
     case 'D001': return 'Fingerprint Registered'
-    default:     return 'Unknown';
+    default: return 'Unknown';
   }
 }
 
@@ -192,37 +192,86 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   }, []);
 
   return (
-    
-      <Box sx={{ width: '100%' }}>
-        <DataGrid<TxRow>
-          rows={rows}
-          columns={columns}
-          loading={loading}
-          disableRowSelectionOnClick
-          autoHeight
-          // pagination (server)
-          rowCount={rowCount}
-          pagination
-          paginationMode="server"
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          pageSizeOptions={[10, 25, 50, 100]}
-          // client-side sorting on the current page (your API doesn’t take sort yet)
-          sortingMode="client"
-          // no server filter/search since your API doesn’t support it yet
-          filterMode="client"
-          columnVisibilityModel={columnVisibilityModel}
-          // toolbar: quick filter will only filter the current page (client mode)
-          slots={{ toolbar: GridToolbar }}
-          slotProps={{
-            toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 300 } },
-          }}
-          sx={{
-            '& .MuiDataGrid-cell': { outline: 'none' },
-            '& .MuiDataGrid-virtualScroller': { overscrollBehavior: 'contain' },
-          }}
-        />
-      </Box>
+    <Box sx={{
+      width: '100%',
+      backgroundColor: theme.palette.background.paper,
+      borderRadius: 1,
+      overflow: 'hidden'
+    }}>
+      <DataGrid<TxRow>
+        rows={rows}
+        columns={columns}
+        loading={loading}
+        disableRowSelectionOnClick
+        autoHeight
+        // pagination (server)
+        rowCount={rowCount}
+        pagination
+        paginationMode="server"
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        pageSizeOptions={[10, 25, 50, 100]}
+        // client-side sorting on the current page (your API doesn't take sort yet)
+        sortingMode="client"
+        // no server filter/search since your API doesn't support it yet
+        filterMode="client"
+        columnVisibilityModel={columnVisibilityModel}
+        // toolbar: quick filter will only filter the current page (client mode)
+        slots={{ toolbar: GridToolbar }}
+        slotProps={{
+          toolbar: { showQuickFilter: true, quickFilterProps: { debounceMs: 300 } },
+        }}
+        sx={{
+          backgroundColor: theme.palette.background.paper,
+          '& .MuiDataGrid-root': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-main': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-container--top': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-container--bottom': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-cell': { 
+            outline: 'none',
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-row': {
+            backgroundColor: theme.palette.background.paper,
+            '&:hover': {
+              backgroundColor: theme.palette.action.hover,
+            },
+            '&.Mui-selected': {
+              backgroundColor: theme.palette.action.selected,
+              '&:hover': {
+                backgroundColor: theme.palette.action.selected,
+              },
+            },
+          },
+          '& .MuiDataGrid-columnHeaders': {
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `2px solid ${theme.palette.divider}`,
+            fontWeight: 600,
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 600,
+            },
+          },
+          '& .MuiDataGrid-footerContainer': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-toolbarContainer': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-virtualScroller': { 
+            overscrollBehavior: 'contain',
+            backgroundColor: theme.palette.background.paper,
+          },
+        }}
+      />
+    </Box>
   );
 });
 

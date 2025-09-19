@@ -167,7 +167,13 @@ const UsersGrid = forwardRef<UsersGridRef, { onEditUser: (user: User) => void }>
   }));
 
   return (
-    <Box sx={{ height: 600, width: '100%' }}>
+    <Box sx={{
+      height: 600,
+      width: '100%',
+      backgroundColor: theme.palette.background.paper,
+      borderRadius: 1,
+      overflow: 'hidden'
+    }}>
       <DataGrid
         rows={rowsWithId}
         columns={columns}
@@ -192,19 +198,53 @@ const UsersGrid = forwardRef<UsersGridRef, { onEditUser: (user: User) => void }>
           },
         }}
         sx={{
-          '& .MuiDataGrid-cell': {
-            borderBottom: '1px solid',
-            borderColor: 'divider',
+          backgroundColor: theme.palette.background.paper,
+          '& .MuiDataGrid-root': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-main': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-container--top': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-container--bottom': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-cell': { 
+            outline: 'none',
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-row': {
+            backgroundColor: theme.palette.background.paper,
+            '&:hover': {
+              backgroundColor: theme.palette.action.hover,
+            },
+            '&.Mui-selected': {
+              backgroundColor: theme.palette.action.selected,
+              '&:hover': {
+                backgroundColor: theme.palette.action.selected,
+              },
+            },
           },
           '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: 'grey.50',
-            borderBottom: '2px solid',
-            borderColor: 'divider',
+            backgroundColor: theme.palette.background.paper,
+            borderBottom: `2px solid ${theme.palette.divider}`,
+            fontWeight: 600,
+            '& .MuiDataGrid-columnHeaderTitle': {
+              fontWeight: 600,
+            },
           },
-          '& .MuiDataGrid-row:hover': {
-            backgroundColor: 'action.hover',
+          '& .MuiDataGrid-footerContainer': {
+            backgroundColor: theme.palette.background.paper,
           },
-          
+          '& .MuiDataGrid-toolbarContainer': {
+            backgroundColor: theme.palette.background.paper,
+          },
+          '& .MuiDataGrid-virtualScroller': { 
+            overscrollBehavior: 'contain',
+            backgroundColor: theme.palette.background.paper,
+          },
         }}
       />
     </Box>

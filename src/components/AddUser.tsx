@@ -66,9 +66,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
-      backgroundColor: theme.palette.mode === 'dark'
-        ? '#424242'  // Dark gray for dark mode
-        : theme.palette.background.paper,  // Light background for light mode
+      backgroundColor: theme.palette.background.default,
       borderRadius: '8px',
       border: `1px solid ${theme.palette.divider}`,
       '&:before': {
@@ -82,16 +80,12 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
       },
       '&:hover': {
         borderColor: theme.palette.primary.main,
-        backgroundColor: theme.palette.mode === 'dark'
-          ? '#616161'  // Slightly lighter on hover in dark mode
-          : theme.palette.background.paper,
+        backgroundColor: theme.palette.action.hover,
       },
       '&.Mui-focused': {
         borderColor: theme.palette.primary.main,
-        borderWidth: '1px',  // Keep same border width to prevent layout shift
-        backgroundColor: theme.palette.mode === 'dark'
-          ? '#616161'  // Slightly lighter when focused in dark mode
-          : theme.palette.background.paper,
+        borderWidth: '1px',
+        backgroundColor: theme.palette.action.hover,
       },
     },
     '& .MuiFilledInput-underline:before': {
@@ -103,7 +97,6 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     '& .MuiFilledInput-underline:hover:not(.Mui-disabled):before': {
       borderBottom: 'none',
     },
-    // Additional selectors to override Material-UI's internal styling
     '& .MuiFilledInput-input': {
       backgroundColor: 'transparent',
     },
@@ -265,7 +258,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
         <Card sx={{
           boxShadow: { xs: 0, sm: 2 },
           borderColor: { xs: 'transparent', sm: theme.palette.divider },
-          backgroundColor: { xs: 'transparent', sm: theme.palette.mode === 'dark' ? '#2e2e2e' : '#f5f5f5' },
+          backgroundColor: { xs: 'transparent', sm: theme.palette.background.paper },
           padding: { xs: 0, sm: 2 }
         }}>
           <CardContent sx={{ p: { xs: 0, sm: 3 } }}>
@@ -317,9 +310,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                       ...textFieldStyles,
                       '& .MuiFilledInput-root': {
                         ...textFieldStyles['& .MuiFilledInput-root'],
-                        backgroundColor: theme.palette.mode === 'dark'
-                          ? '#2e2e2e'  // Darker background for read-only
-                          : '#f5f5f5', // Light gray background for read-only
+                        backgroundColor: theme.palette.action.disabledBackground,
                         cursor: 'default',
                       },
                     }}

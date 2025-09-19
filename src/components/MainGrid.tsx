@@ -17,13 +17,17 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { BarChart, LineChart, PieChart } from '@mui/x-charts';
 import { getDashboardOverview } from '../services/api';
 import { EVENT_SETS, EVENT_LABELS } from '../constants/events';
+import { useTheme } from '@mui/material/styles';
 
 function StatCard({ title, value }: { title: string; value: number | string }) {
+  const theme = useTheme();
   return (
-    <Card><CardContent>
-      <Typography variant="overline" color="text.secondary">{title}</Typography>
-      <Typography variant="h5" sx={{ mt: 0.5 }}>{value}</Typography>
-    </CardContent></Card>
+    <Card sx={{ backgroundColor: theme.palette.background.paper }}>
+      <CardContent>
+        <Typography variant="overline" color="text.secondary">{title}</Typography>
+        <Typography variant="h5" sx={{ mt: 0.5 }}>{value}</Typography>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -41,6 +45,7 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
 }
 
 export default function MainGrid() {
+  const theme = useTheme();
   const [data, setData] = React.useState<Awaited<ReturnType<typeof getDashboardOverview>> | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -183,70 +188,84 @@ export default function MainGrid() {
       {/* Deliveries bar */}
       <Grid container spacing={2} sx={{ mt: 1 }}>
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Deliveries (last {selectedPeriod} days)</Typography>
-            <BarChart
-              height={280}
-              borderRadius={5}
-
-              xAxis={[{ scaleType: 'band', data: xDates }]}
-              series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
-            />
-          </CardContent></Card>
+          <Card sx={{ backgroundColor: theme.palette.background.paper }}>
+            <CardContent>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Deliveries (last {selectedPeriod} days)</Typography>
+              <BarChart
+                height={280}
+                borderRadius={5}
+                sx={{ backgroundColor: theme.palette.background.paper }}
+                xAxis={[{ scaleType: 'band', data: xDates }]}
+                series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
+              />
+            </CardContent>
+          </Card>
         </Grid>
 
         {/* Incidents stacked */}
         <Grid size={{ xs: 12, md: 6 }}>
-          <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Incidents (last {selectedPeriod} days)</Typography>
-            <BarChart
-              height={280}
-              borderRadius={5}
-              xAxis={[{ scaleType: 'band', data: xDates }]}
-              series={[
-                { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc' },
-                { data: incidentsBoxSeries, label: 'Box stolen (C009)', stack: 'inc' },
-              ]}
-            />
-          </CardContent></Card>
+          <Card sx={{ backgroundColor: theme.palette.background.paper }}>
+            <CardContent>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Incidents (last {selectedPeriod} days)</Typography>
+              <BarChart
+                height={280}
+                borderRadius={5}
+                sx={{ backgroundColor: theme.palette.background.paper }}
+                xAxis={[{ scaleType: 'band', data: xDates }]}
+                series={[
+                  { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc' },
+                  { data: incidentsBoxSeries, label: 'Box stolen (C009)', stack: 'inc' },
+                ]}
+              />
+            </CardContent>
+          </Card>
         </Grid>
 
         {/* Weight trend */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Average Weight (last {selectedPeriod} days)</Typography>
-            <LineChart
-              height={280}
-              xAxis={[{
-                scaleType: 'point', data: weightSeries.map(x => {
-                  const d = new Date(x.date);
-                  return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-                })
-              }]}
-              series={[{
-                data: weightSeries.map(x => x.avgWeight),
-                label: 'Avg weight (g)',
-                area: true,
-                color: '#4255fb' //theme.palette.primary.main
-              }]}
-              sx={{
-                '& .MuiAreaElement-root': {
-                  fill: 'url(#organic)',
-                }
-              }}
-            >
-              <AreaGradient color="#4255fb" id="organic" />
-            </LineChart>
+          <Card sx={{ backgroundColor: theme.palette.background.paper }}>
+            <CardContent>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Average Weight (last {selectedPeriod} days)</Typography>
+              <LineChart
+                height={280}
+                xAxis={[{
+                  scaleType: 'point', data: weightSeries.map(x => {
+                    const d = new Date(x.date);
+                    return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+                  })
+                }]}
+                series={[{
+                  data: weightSeries.map(x => x.avgWeight),
+                  label: 'Avg weight (g)',
+                  area: true,
+                  color: theme.palette.primary.main
+                }]}
+                sx={{
+                  backgroundColor: theme.palette.background.paper,
+                  '& .MuiAreaElement-root': {
+                    fill: 'url(#organic)',
+                  }
+                }}
+              >
+                <AreaGradient color={theme.palette.primary.main} id="organic" />
+              </LineChart>
 
-          </CardContent></Card>
+            </CardContent>
+          </Card>
         </Grid>
 
         {/* Event mix */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card><CardContent>
-            <Typography variant="subtitle1" sx={{ mb: 1 }}>Event mix (last {selectedPeriod} days)</Typography>
-            <PieChart height={280} series={[{ data: pieData }]} />
-          </CardContent></Card>
+          <Card sx={{ backgroundColor: theme.palette.background.paper }}>
+            <CardContent>
+              <Typography variant="subtitle1" sx={{ mb: 1 }}>Event mix (last {selectedPeriod} days)</Typography>
+              <PieChart 
+                height={280} 
+                series={[{ data: pieData }]} 
+                sx={{ backgroundColor: theme.palette.background.paper }}
+              />
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

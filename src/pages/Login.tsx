@@ -58,7 +58,7 @@ const Login: React.FC = () => {
     try {
       const result = await UserLogin(email, password);
       console.log('Login API response:', result);
-      
+
       if (result.status === 1) {
         const loginData = {
           data: {
@@ -106,13 +106,12 @@ const Login: React.FC = () => {
   return (
     <Box
       sx={{
-        minHeight: '100svh',
         display: 'flex',
-        alignItems: { xs: 'top', sm: 'center'},
+        alignItems: { xs: 'top', sm: 'center' },
         justifyContent: 'center',
         bgcolor: { xs: 'transparent', sm: (t) => t.palette.mode === 'light' ? 'grey.50' : 'background.default' },
-        px: { xs: 0, sm: 2},
-        mt: { xs: 10, sm: 'auto'}
+        px: { xs: 0, sm: 2 },
+        mt: { xs: 10, sm: 15 }
       }}
     >
       <Container maxWidth="xs" disableGutters>
@@ -136,7 +135,7 @@ const Login: React.FC = () => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary">
-              
+
             </Typography>
           </Box>
 
@@ -217,16 +216,18 @@ const Login: React.FC = () => {
               {isLoading ? 'Signing in…' : 'Sign in'}
             </Button>
           </Box>
+
+          {/* Footer (optional) */}
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: 'block', textAlign: 'center', mt: 2 }}
+          >
+            © {new Date().getFullYear()} Team Winter, AUT
+          </Typography>
         </Paper>
 
-        {/* Footer (optional) */}
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: 'block', textAlign: 'center', mt: 2 }}
-        >
-          © {new Date().getFullYear()} Team Winter, AUT
-        </Typography>
+
       </Container>
     </Box>
   );
