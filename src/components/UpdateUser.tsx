@@ -372,9 +372,18 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
   return (
     <>
-      <Box sx={{ padding: { xs: 0, md: 3 }, maxWidth: 600, margin: '0 auto' }}>
-        <Card sx={{ boxShadow: 2 }}>
-          <CardContent sx={{ p: 3 }}>
+      <Box sx={{
+        padding: { xs: 0, sm: 0 },
+        maxWidth: { xs: '100%', sm: 600 },
+        margin: '0 auto'
+      }}>
+        <Card sx={{
+          boxShadow: { xs: 0, sm: 2 },
+          borderColor: { xs: 'transparent', sm: theme.palette.divider },
+          backgroundColor: { xs: 'transparent', sm: theme.palette.mode === 'dark' ? '#2e2e2e' : '#f5f5f5' },
+          padding: { xs: 0, sm: 2 }
+        }}>
+          <CardContent sx={{ p: { xs: 0, sm: 3 } }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
               Update User
             </Typography>
@@ -654,7 +663,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               <Typography color="red">
                 You are safe to dismiss this popup and check back later for fingerprint status in User Management.
               </Typography>
-              <CircularProgress size={40} sx={{ mt: 2 }}/>
+              <CircularProgress size={40} sx={{ mt: 2 }} />
               <Box sx={{ mt: 3 }}>
                 <Button
                   variant="outlined"

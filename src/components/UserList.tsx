@@ -49,7 +49,7 @@ const UserList: React.FC<{ onAddUser: () => void; onEditUser: (user: User) => vo
               startIcon={<AddIcon />}
               onClick={onAddUser}
             >
-              Add User
+              New
             </Button>
           </Stack>
         </Box>

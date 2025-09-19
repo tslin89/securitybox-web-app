@@ -116,8 +116,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-              (name === 'userType' || name === 'boxID') ? Number(value) : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
+        (name === 'userType' || name === 'boxID') ? Number(value) : value
     }));
   };
 
@@ -258,12 +258,17 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
   return (
     <>
       <Box sx={{
-        padding: { xs: 2, sm: 3 },
+        padding: { xs: 0, sm: 0 },
         maxWidth: { xs: '100%', sm: 600 },
         margin: '0 auto'
       }}>
-        <Card sx={{ boxShadow: 2 }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+        <Card sx={{
+          boxShadow: { xs: 0, sm: 2 },
+          borderColor: { xs: 'transparent', sm: theme.palette.divider },
+          backgroundColor: { xs: 'transparent', sm: theme.palette.mode === 'dark' ? '#2e2e2e' : '#f5f5f5' },
+          padding: { xs: 0, sm: 2 }
+        }}>
+          <CardContent sx={{ p: { xs: 0, sm: 3 } }}>
             <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
               Add New User
             </Typography>
@@ -312,7 +317,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                       ...textFieldStyles,
                       '& .MuiFilledInput-root': {
                         ...textFieldStyles['& .MuiFilledInput-root'],
-                        backgroundColor: theme.palette.mode === 'dark' 
+                        backgroundColor: theme.palette.mode === 'dark'
                           ? '#2e2e2e'  // Darker background for read-only
                           : '#f5f5f5', // Light gray background for read-only
                         cursor: 'default',
@@ -513,7 +518,7 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
               <Typography color="red">
                 You are safe to dismiss this popup and check back later for fingerprint status in User Management.
               </Typography>
-              <CircularProgress size={40} sx={{ mt: 2 }}/>
+              <CircularProgress size={40} sx={{ mt: 2 }} />
               <Box sx={{ mt: 3 }}>
                 <Button
                   variant="outlined"

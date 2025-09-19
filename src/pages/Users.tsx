@@ -66,7 +66,7 @@ const Users: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 }, mt: { xs: 8, md: 0 } }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 3, md: 0 }, mt: { xs: 5, md: 0 }, px: { xs: 0, sm: 0 }  }}>
       {currentView === 'list' && (
         <UserList onAddUser={handleAddUser} onEditUser={handleEditUser} refreshTrigger={refreshTrigger} />
       )}

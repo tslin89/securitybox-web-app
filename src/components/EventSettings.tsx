@@ -120,7 +120,7 @@ export default function EventSettings({ userId }: EventSettingsProps) {
   }
 
   return (
-    <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}>
+    <Paper elevation={1} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1 }}>
       <Typography variant="h6" sx={{ mb: 1.5 }}>
         Event Notifications
       </Typography>

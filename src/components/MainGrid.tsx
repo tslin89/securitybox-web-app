@@ -140,10 +140,11 @@ export default function MainGrid() {
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <FormControl size="small" sx={{ minWidth: 100 }}>
-            <InputLabel>Period</InputLabel>
+            <InputLabel></InputLabel>
             <Select
               value={selectedPeriod}
               label="Period"
+              sx={{height: 40}}
               onChange={handlePeriodChange}
             >
               <MenuItem value={7}>7 days</MenuItem>
@@ -169,12 +170,12 @@ export default function MainGrid() {
 
       {/* Top stats */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}><StatCard title="Total Boxes" value={summary.totalBoxes} /></Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}><StatCard title="Active Boxes" value={summary.activeBoxes} /></Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}><StatCard title="Total Boxes" value={summary.totalBoxes} /></Grid>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}><StatCard title="Active Boxes" value={summary.activeBoxes} /></Grid>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatCard title={`Deliveries (${selectedPeriod}d)`} value={sumCodes(EVENT_SETS.deliveries)} />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
           <StatCard title={`Incidents (${selectedPeriod}d)`} value={sumCodes(EVENT_SETS.incidents)} />
         </Grid>
       </Grid>
