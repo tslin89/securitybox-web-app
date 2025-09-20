@@ -160,6 +160,7 @@ export default function EventSettings({ userId }: EventSettingsProps) {
                     label={getEventTypeLabel(setting.eventType)}
                     color={getEventTypeColor(setting.eventType)}
                     size="small"
+                    variant="outlined"
                   />
                 </TableCell>
                 <TableCell align="center">

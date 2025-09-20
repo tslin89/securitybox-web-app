@@ -49,6 +49,7 @@ interface User {
   phoneNo?: string;
   userType: number;
   isEnabled?: boolean;
+  fingerprintEnabled?: boolean;
 }
 
 interface UpdateUserProps {
@@ -66,7 +67,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     password: '',
     confirmPassword: '',
     userType: 2,
-    isEnabled: true
+    isEnabled: true,
+    fingerprintEnabled: false
   });
 
   const [originalUser, setOriginalUser] = useState<User | null>(null);
@@ -132,7 +134,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         password: '',
         confirmPassword: '',
         userType: user.userType,
-        isEnabled: user.isEnabled ?? true
+        isEnabled: user.isEnabled ?? true,
+        fingerprintEnabled: user.fingerprintEnabled ?? false
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user');
@@ -194,7 +197,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         email: formData.email,
         phoneNo: formData.phoneNo || undefined,
         userType: formData.userType,
-        isEnabled: formData.isEnabled
+        isEnabled: formData.isEnabled,
+        fingerprintEnabled: formData.fingerprintEnabled
       };
 
       if (changePassword) {
@@ -375,17 +379,36 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               </TextField>
 
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.isEnabled}
-                    onChange={() => handleToggleChange('isEnabled')}
-                    color="primary"
-                  />
-                }
-                label="User Enabled"
-                sx={{ mb: 2 }}
-              />
+              <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+                gap: 2
+              }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isEnabled}
+                      onChange={() => handleToggleChange('isEnabled')}
+                      color="primary"
+                    />
+                  }
+                  label="User Enabled"
+                  sx={{ margin: 0 }}
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.fingerprintEnabled}
+                      onChange={() => handleToggleChange('fingerprintEnabled')}
+                      color="primary"
+                    />
+                  }
+                  label="Fingerprint Enabled"
+                  sx={{ margin: 0 }}
+                />
+              </Box>
 
               <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3, mb: 3 }}>
                 {!isCurrentUser && (

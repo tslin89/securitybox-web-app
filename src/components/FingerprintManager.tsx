@@ -174,7 +174,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
       setStatus('error');
       setHasPendingSetup(false);
     }
-  }, [type, deviceId, userID, fingerprintNum, onSuccess, onClose, checkInterval, hasPendingSetup]);
+  }, [type, deviceId, userID, fingerprintNum, boxID, status, onSuccess, onClose, checkInterval, hasPendingSetup]);
 
   const handleDismiss = useCallback(() => {
     if (checkInterval) {
@@ -349,7 +349,16 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     if (status === 'error') {
       return (
         <>
-
+          <Button
+            onClick={onClose}
+            color="primary"
+            sx={{
+              width: { xs: '100%', md: 'auto' },
+              minWidth: { md: 120 }
+            }}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleStartOperation}
             variant="contained"
@@ -361,16 +370,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
           >
             Try Again
           </Button>
-          <Button
-            onClick={onClose}
-            color="primary"
-            sx={{
-              width: { xs: '100%', md: 'auto' },
-              minWidth: { md: 120 }
-            }}
-          >
-            Cancel
-          </Button>
+
         </>
       );
     }
@@ -378,7 +378,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     if (status === 'processing') {
       return (
         <Button
-          variant="outlined"
+          color="primary"
           onClick={onClose}
           sx={{
             width: { xs: '100%', md: 'auto' },
@@ -409,7 +409,16 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     // Initial state
     return (
       <>
-
+        <Button
+          onClick={onClose}
+          color="primary"
+          sx={{
+            width: { xs: '100%',  md: 'auto' },
+            minWidth: { md: 120 }
+          }}
+        >
+          Cancel
+        </Button>
         <Button
           onClick={handleStartOperation}
           variant="contained"
@@ -425,16 +434,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
             : 'Remove Fingerprint'
           }
         </Button>
-        <Button
-          onClick={onClose}
-          color="primary"
-          sx={{
-            width: { xs: '100%', md: 'auto' },
-            minWidth: { md: 120 }
-          }}
-        >
-          Cancel
-        </Button>
+
       </>
     );
   };

@@ -47,9 +47,9 @@ type ApiResponse = {
 };
 
 // --- Helpers ---
-function getEventTypeColor(eventType: number): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' {
+function getEventTypeColor(eventType: number): 'default' | 'warning' | 'success' | 'error' {
   switch (eventType) {
-    case 0: return 'info';   // info
+    case 0: return 'default';   // info
     case 1: return 'warning';   // warning
     case 2: return 'success';   // success
     case 3: return 'error';     // error
