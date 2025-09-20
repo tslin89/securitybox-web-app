@@ -70,6 +70,13 @@ export const inputsCustomizations: Components<Theme> = {
               '&:active': {
                 backgroundColor: gray[800],
               },
+              '&:disabled': {
+                color: alpha('#ffffff', 0.3),
+                backgroundColor: alpha(gray[900], 0.3),
+                backgroundImage: 'none',
+                boxShadow: 'none',
+                border: `1px solid ${alpha(gray[700], 0.3)}`,
+              },
               ...theme.applyStyles('dark', {
                 color: 'black',
                 backgroundColor: gray[50],
@@ -83,6 +90,13 @@ export const inputsCustomizations: Components<Theme> = {
                 },
                 '&:active': {
                   backgroundColor: gray[400],
+                },
+                '&:disabled': {
+                  color: alpha('#000000', 0.3),
+                  backgroundColor: alpha(gray[50], 0.3),
+                  backgroundImage: 'none',
+                  boxShadow: 'none',
+                  border: `1px solid ${alpha(gray[50], 0.3)}`,
                 },
               }),
             },
@@ -106,6 +120,13 @@ export const inputsCustomizations: Components<Theme> = {
                 backgroundColor: brand[700],
                 backgroundImage: 'none',
               },
+              '&:disabled': {
+                color: alpha('#ffffff', 0.3),
+                backgroundColor: alpha(brand[300], 0.3),
+                backgroundImage: 'none',
+                boxShadow: 'none',
+                border: `1px solid ${alpha(brand[500], 0.3)}`,
+              },
             },
           },
           {
@@ -124,6 +145,11 @@ export const inputsCustomizations: Components<Theme> = {
               '&:active': {
                 backgroundColor: gray[200],
               },
+              '&:disabled': {
+                color: alpha(gray[600], 0.3),
+                backgroundColor: alpha(gray[50], 0.1),
+                borderColor: alpha(gray[200], 0.3),
+              },
               ...theme.applyStyles('dark', {
                 backgroundColor: gray[800],
                 borderColor: gray[700],
@@ -134,6 +160,11 @@ export const inputsCustomizations: Components<Theme> = {
                 },
                 '&:active': {
                   backgroundColor: gray[900],
+                },
+                '&:disabled': {
+                  color: alpha(gray[400], 0.3),
+                  backgroundColor: alpha(gray[800], 0.1),
+                  borderColor: alpha(gray[700], 0.3),
                 },
               }),
             },

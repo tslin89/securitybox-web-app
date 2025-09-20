@@ -30,7 +30,7 @@ export default function TransactionList() {
               Transaction List
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              View and search your recent parcel transactions.
+              View full transaction and security control history.
             </Typography>
           </Box>
           <Tooltip title="Refresh">

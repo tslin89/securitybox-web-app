@@ -9,7 +9,7 @@ import {
   Button,
 } from "@mui/material";
 import { Refresh as RefreshIcon } from '@mui/icons-material';
-import { BoxData, getLastEventData } from '../services/api';
+import { BoxData, getUserBoxData } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import BoxCard from '../components/BoxCard';
 
@@ -25,7 +25,7 @@ export default function BoxesList() {
     
     try {
       setError(null);
-      const response = await getLastEventData(user.userID, 0); // Get all boxes
+      const response = await getUserBoxData(user.userID, 0); // Get all boxes
       if (response.status === 1 && response.data) {
         setBoxes(response.data);
       } else {
@@ -42,7 +42,7 @@ export default function BoxesList() {
     if (!user) return;
     
     try {
-      const response = await getLastEventData(user.userID, boxId);
+      const response = await getUserBoxData(user.userID, boxId);
       if (response.status === 1 && response.data && response.data.length > 0) {
         const updatedBox = response.data[0];
         setBoxes(prevBoxes => 
@@ -95,7 +95,7 @@ export default function BoxesList() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Security Boxes
+              Box Status & Security Control
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Monitor and manage your IoT Enabled Security Boxes.

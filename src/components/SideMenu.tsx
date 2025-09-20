@@ -39,10 +39,18 @@ const Drawer = styled(MuiDrawer)({
   },
 });
 
-function NavList({ items }: { items: typeof mainNav }) {
+function NavList({ items, userType }: { items: typeof mainNav; userType?: number }) {
+  // Filter items based on userType - only show Transactions for userType 1
+  const filteredItems = items.filter(item => {
+    if (item.label === 'Transactions') {
+      return userType === 1;
+    }
+    return true; // Show all other items
+  });
+
   return (
     <List sx={{ px: 1 }}>
-      {items.map((item) => (
+      {filteredItems.map((item) => (
         <ListItem key={item.to} disablePadding>
           <ListItemButton
             component={NavLink}
@@ -104,7 +112,7 @@ export default function SideMenu() {
         <Divider sx={{ my: 1 }} />
 
         {/* MAIN NAV (Home, Clients, Transactions) */}
-        <NavList items={mainNav} />
+        <NavList items={mainNav} userType={user?.userType} />
         <Divider sx={{ my: 1 }} />
 
         {/* Push the user block to the absolute bottom */}
@@ -160,7 +168,7 @@ export default function SideMenu() {
             </MenuItem> */}
             <MenuItem onClick={doLogout}>
               <ListItemIcon><LogoutRoundedIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Logout</ListItemText>
+              <ListItemText>Sign Out</ListItemText>
             </MenuItem>
           </Menu>
         </Box>

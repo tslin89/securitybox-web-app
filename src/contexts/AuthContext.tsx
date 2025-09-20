@@ -1,5 +1,6 @@
 // contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User } from '../services/api';
 
 interface Box {
   boxID: number;
@@ -13,13 +14,6 @@ interface EventCode {
   eventType: number;
 }
 
-interface User {
-  userID: number;
-  userName: string;
-  email: string;
-  phoneNo: string;
-  boxID: number;
-}
 
 interface LoginResponse {
   transactionID?: string;
@@ -58,6 +52,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  console.log('🔐 AuthProvider: Component initialized');
+  
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [boxList, setBoxList] = useState<Box[]>([]);
@@ -66,16 +62,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check if user is authenticated
   const isAuthenticated = !!user && !!token;
+  
+  console.log('🔐 AuthProvider: Current state:', { user, token, eventCodes, isLoading, isAuthenticated });
 
   // Load auth data from localStorage on app start
   useEffect(() => {
     const loadAuthData = () => {
+      console.log('🔄 AuthContext: Starting to load auth data from localStorage');
       try {
         const storedToken = localStorage.getItem('authToken');
         const storedUser = localStorage.getItem('authUser');
         const storedBoxList = localStorage.getItem('authBoxList');
         const storedEventCodes = localStorage.getItem('authEventCodes');
         const tokenExpiry = localStorage.getItem('tokenExpiry');
+
+        console.log('🔄 AuthContext: Found stored data:', { 
+          hasToken: !!storedToken, 
+          hasUser: !!storedUser, 
+          hasBoxList: !!storedBoxList, 
+          hasEventCodes: !!storedEventCodes 
+        });
 
         if (storedToken && storedUser) {
           // Check if token is expired
@@ -87,11 +93,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             localStorage.removeItem('authEventCodes');
             localStorage.removeItem('tokenExpiry');
           } else {
+            console.log('🔄 AuthContext: Setting auth data from localStorage');
             setToken(storedToken);
             setUser(JSON.parse(storedUser));
             if (storedBoxList) setBoxList(JSON.parse(storedBoxList));
-            if (storedEventCodes) setEventCodes(JSON.parse(storedEventCodes));
+            if (storedEventCodes) {
+              const parsedEventCodes = JSON.parse(storedEventCodes);
+              console.log('🔄 AuthContext: Setting eventCodes:', parsedEventCodes);
+              setEventCodes(parsedEventCodes);
+            }
           }
+        } else {
+          console.log('🔄 AuthContext: No stored auth data found');
         }
       } catch (error) {
         console.error('Error loading auth data:', error);
@@ -102,6 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('authEventCodes');
         localStorage.removeItem('tokenExpiry');
       } finally {
+        console.log('🔄 AuthContext: Finished loading, setting isLoading to false');
         setIsLoading(false);
       }
     };
@@ -141,6 +155,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error('Missing required login data');
     }
     
+    console.log('🔄 AuthContext: Setting login data:', { 
+      hasToken: !!token, 
+      hasUser: !!user, 
+      hasBoxes: !!boxes, 
+      hasEvents: !!events,
+      eventsCount: events?.length || 0 
+    });
+    
     setToken(token);
     setUser(user);
     setBoxList(boxes || []);
@@ -151,6 +173,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem('authUser', JSON.stringify(user));
     localStorage.setItem('authBoxList', JSON.stringify(boxes || []));
     localStorage.setItem('authEventCodes', JSON.stringify(events || []));
+    
+    console.log('🔄 AuthContext: Stored eventCodes in localStorage:', events);
     
     // Set token expiry (default to 24 hours if not provided)
     const expiryTime = new Date().getTime() + (loginData.expiresIn || 24 * 60 * 60) * 1000;
@@ -204,6 +228,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuthStatus
   };
 
+  console.log('🔐 AuthProvider: Providing context value:', contextValue);
+
   return (
     <AuthContext.Provider value={contextValue}>
       {children}
@@ -212,9 +238,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 };
 
 export const useAuth = (): AuthContextType => {
+  console.log('🔐 useAuth: Hook called');
   const context = useContext(AuthContext);
+  console.log('🔐 useAuth: Context value:', context);
   if (!context) {
+    console.error('🔐 useAuth: Context is null - not within AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  console.log('🔐 useAuth: Returning context:', context);
   return context;
 };

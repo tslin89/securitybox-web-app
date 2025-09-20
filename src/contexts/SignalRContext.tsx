@@ -4,7 +4,6 @@ import { HubConnection, HubConnectionBuilder, HubConnectionState } from '@micros
 import { initiateSignalR } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useAlerts } from '../alerts/AlertsProvider';
-import { EVENT_SETS } from '../constants/events';
 
 type Status = 'connected' | 'connecting' | 'disconnected' | 'error';
 
@@ -30,20 +29,134 @@ interface SignalRContextType {
 
 const SignalRContext = createContext<SignalRContextType | null>(null);
 
+// Helper function to get event information from API data
+function getEventInfo(eventCode: string, eventCodes: any[]): { description: string; type: AlertData['type'] } {
+    console.log("🔍 getEventInfo called with:", { eventCode, eventCodesLength: eventCodes?.length });
+    console.log("🔍 Looking for event code in:", eventCodes?.map(e => e.eventCode));
+    
+    // If eventCodes is not available yet, return a fallback
+    if (!eventCodes || eventCodes.length === 0) {
+        console.log("🔍 EventCodes not available yet, using fallback");
+        return { description: `Event ${eventCode}`, type: 'info' };
+    }
+    
+    const event = eventCodes.find(e => e.eventCode === eventCode);
+    console.log("🔍 Found event:", event);
+    
+    if (!event) {
+        console.log("🔍 Event not found, returning Unknown Event");
+        return { description: `Unknown Event (${eventCode})`, type: 'info' };
+    }
+    
+    // Map eventType number to AlertData type
+    let alertType: AlertData['type'] = 'info';
+    switch (event.eventType) {
+        case 0: alertType = 'info'; break;
+        case 1: alertType = 'warning'; break;
+        case 2: alertType = 'success'; break;
+        case 3: alertType = 'error'; break;
+        default: alertType = 'info'; break;
+    }
+    
+    console.log("🔍 Returning event info:", { description: event.eventDescription, type: alertType });
+    return {
+        description: event.eventDescription,
+        type: alertType
+    };
+}
+
+// Helper function to check if an event is an incident (error type events)
+function isIncidentEvent(eventCode: string, eventCodes: any[]): boolean {
+    if (!eventCodes || eventCodes.length === 0) {
+        return false; // Default to not incident if eventCodes not available
+    }
+    const event = eventCodes.find(e => e.eventCode === eventCode);
+    return event ? event.eventType === 3 : false; // eventType 3 = error
+}
+
+// Helper function to get box description from boxList
+function getBoxDescription(boxId: number, boxList: any[]): string {
+    if (!boxList || boxList.length === 0) {
+        return 'Unknown Box';
+    }
+    const box = boxList.find(b => b.boxID === boxId);
+    return box ? box.description : 'Unknown Box';
+}
+
 interface SignalRProviderProps {
     children: ReactNode;
 }
 
 export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) => {
+    console.log('🚀 SignalRProvider: Component initialized');
+    
     const [connection, setConnection] = useState<HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [connectionState, setConnectionState] = useState('Disconnected');
     // Removed internal alerts state - using AlertsProvider instead
     const [transactionUpdateCallbacks, setTransactionUpdateCallbacks] = useState<Set<() => void>>(new Set());
-    const { isAuthenticated, user, isLoading } = useAuth();
+    
+    console.log('🚀 SignalRProvider: About to call useAuth()');
+    const { isAuthenticated, user, isLoading, eventCodes, boxList } = useAuth();
+    console.log('🚀 SignalRProvider: useAuth() returned:', { isAuthenticated, user, isLoading, eventCodes });
+    
     const { push } = useAlerts();
+    
+    // Fallback: Read eventCodes directly from localStorage if useAuth returns null
+    const [localEventCodes, setLocalEventCodes] = useState<any[]>([]);
+    
+    // Load eventCodes from localStorage as fallback
+    useEffect(() => {
+        const loadEventCodesFromStorage = () => {
+            try {
+                const storedEventCodes = localStorage.getItem('authEventCodes');
+                if (storedEventCodes) {
+                    const parsedEventCodes = JSON.parse(storedEventCodes);
+                    console.log('🔌 SignalRContext: Loaded eventCodes from localStorage:', parsedEventCodes);
+                    setLocalEventCodes(parsedEventCodes);
+                } else {
+                    console.log('🔌 SignalRContext: No eventCodes found in localStorage');
+                }
+            } catch (error) {
+                console.error('🔌 SignalRContext: Error loading eventCodes from localStorage:', error);
+            }
+        };
+        
+        loadEventCodesFromStorage();
+        
+        // Listen for localStorage changes to update eventCodes
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'authEventCodes') {
+                console.log('🔌 SignalRContext: localStorage eventCodes changed, reloading...');
+                loadEventCodesFromStorage();
+            }
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+    
+    // Use eventCodes from useAuth if available, otherwise use localStorage fallback
+    const effectiveEventCodes = eventCodes && eventCodes.length > 0 ? eventCodes : localEventCodes;
+    
+    // Debug logging for SignalRContext
+    console.log('🔌 SignalRContext: useAuth values:', { 
+      isAuthenticated, 
+      user, 
+      isLoading, 
+      eventCodes: eventCodes?.length || 0,
+      eventCodesData: eventCodes,
+      localEventCodes: localEventCodes?.length || 0,
+      effectiveEventCodes: effectiveEventCodes?.length || 0,
+      boxList: boxList?.length || 0,
+      boxListData: boxList
+    });
     const [status, setStatus] = useState<Status>('disconnected');
     const [lastError, setLastError] = useState<string | undefined>(undefined);
+    const isConnectingRef = useRef(false);
 
     const setFromHubState = (state: HubConnectionState) => {
         switch (state) {
@@ -262,6 +375,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                 setConnection(newConnection);
                 setFromHubState(HubConnectionState.Connected);
                 console.log('🔌 Force reconnect successful');
+                isConnectingRef.current = false; // Reset connecting flag
             } else {
                 throw new Error('Invalid response from SignalR negotiation');
             }
@@ -269,6 +383,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             setStatus('error');
             setLastError(e?.message ?? 'Reconnect failed');
             addAlert('SignalR reconnect failed', 'error', false);
+            isConnectingRef.current = false; // Reset connecting flag
         }
     }, [connection, addAlert, user]);
 
@@ -299,6 +414,13 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }, [connection, addAlert]);
 
     const startConnection = useCallback(async (userId?: number): Promise<void> => {
+        console.log('🚀 startConnection called with userId:', userId, 'current connection state:', connection?.state, 'isConnecting:', isConnectingRef.current);
+        
+        if (isConnectingRef.current) {
+            console.log('🔌 SignalR connection already in progress, skipping');
+            return;
+        }
+        
         if (connection && connection.state === HubConnectionState.Connected) {
             console.log('🔌 SignalR already connected');
             return;
@@ -308,6 +430,8 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             console.log('🔌 SignalR already connecting');
             return;
         }
+        
+        isConnectingRef.current = true;
 
         // Use passed userId or fall back to context user
         const userIdToUse = userId || user?.userID;
@@ -342,67 +466,71 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                     .configureLogging('Information') // Enable detailed logging
                     .build();
 
+                // Capture eventCodes and boxList at connection time to avoid stale closures
+                // If effectiveEventCodes is empty, try to reload from localStorage
+                let connectionEventCodes = [...effectiveEventCodes];
+                if (connectionEventCodes.length === 0) {
+                    console.log("📢 effectiveEventCodes is empty, reloading from localStorage...");
+                    try {
+                        const storedEventCodes = localStorage.getItem('authEventCodes');
+                        if (storedEventCodes) {
+                            connectionEventCodes = JSON.parse(storedEventCodes);
+                            console.log("📢 Reloaded eventCodes from localStorage:", connectionEventCodes);
+                        }
+                    } catch (error) {
+                        console.error("📢 Error reloading eventCodes from localStorage:", error);
+                    }
+                }
+                
+                // Capture boxList at connection time
+                let connectionBoxList = [...(boxList || [])];
+                if (connectionBoxList.length === 0) {
+                    console.log("📢 boxList is empty, reloading from localStorage...");
+                    try {
+                        const storedBoxList = localStorage.getItem('authBoxList');
+                        if (storedBoxList) {
+                            connectionBoxList = JSON.parse(storedBoxList);
+                            console.log("📢 Reloaded boxList from localStorage:", connectionBoxList);
+                        }
+                    } catch (error) {
+                        console.error("📢 Error reloading boxList from localStorage:", error);
+                    }
+                }
+                
+                console.log("📢 Captured eventCodes at connection time:", connectionEventCodes);
+                console.log("📢 Captured boxList at connection time:", connectionBoxList);
+
                 // Enhanced event handlers
                 newConnection.on("newAlert", (alertMessage: string) => {
                     console.log("📢 Received alert:", alertMessage);
+                    console.log("📢 Using captured eventCodes:", connectionEventCodes);
+                    console.log("📢 Using captured boxList:", connectionBoxList);
                     lastHeartbeat.current = new Date(); // Update heartbeat
 
                     var temp = JSON.parse(alertMessage)
-                    let msgType: AlertData['type'] = 'info';
-                    let msg = "Unknown";
-                    //'info' | 'warning' | 'error' | 'success';
-
-                    switch (temp.EventCode) {
-                        case "C005": // security deactivated
-                            msg = "Security deactivated";
-                            msgType = 'warning';
-                            break;
-                        case "C008": // parcel returned
-                            msg = "Parcel returned";
-                            msgType = 'warning';
-                            break;
-                        case "C010": // box returned
-                            msg = "Box returned";
-                            msgType = 'warning';
-                            break;
-                        case "C007": // parcel stolen
-                            msg = "Parcel stolen";
-                            msgType = "error";
-                            break;
-                        case "C009": // box stolen
-                            msg = "Box stolen";
-                            msgType = "error";
-                            break;
-                        case "C003": // parcel delivered
-                            msg = "Parcel delivered";
-                            msgType = 'success';
-                            break;
-                        case "C004": // parcel retrieved
-                            msg = "Parcel retrieved";
-                            msgType = 'success';
-                            break;
-                        case "C000": // wifi connected
-                            msg = "Wifi connected";
-                            msgType = 'info';
-                            break;
-                        case "C001": // box opened
-                            msg = "Box opened";
-                            msgType = 'info';
-                            break;
-                        case "C002": // box closed
-                            msg = "Box closed";
-                            msgType = 'info';
-                            break;
-                        case "C006": // security reactivated
-                            msg = "Security reactivated";
-                            msgType = 'info';
-                            break;
-                    }
+                    console.log("📢 Parsed event code:", temp.EventCode, "BoxID:", temp.BoxID);
+                    
+                    // Get event information
+                    const eventInfo = getEventInfo(temp.EventCode, connectionEventCodes);
+                    console.log("📢 Event info result:", eventInfo);
+                    
+                    // Get box description
+                    const boxDescription = getBoxDescription(temp.BoxID, connectionBoxList);
+                    console.log("📢 Box description:", boxDescription);
+                    
+                    // Format message like Transaction List: [Code] - [Description]
+                    const formattedMessage = `${temp.EventCode} - ${eventInfo.description}`;
+                    const fullMessage = `<b>${formattedMessage}</b><br/>${boxDescription}`;
+                    
+                    console.log("📢 Formatted message:", fullMessage);
+                    console.log("📢 HTML will render as:", "Bold text on first line, box description on second line");
+                    
+                    const msgType = eventInfo.type;
 
                     // Check if this is an incident event (should not auto-dismiss)
-                    const isIncident = EVENT_SETS.incidents.includes(temp.EventCode);
+                    const isIncident = isIncidentEvent(temp.EventCode, connectionEventCodes);
                     
-                    addAlert(msg, msgType, isIncident);
+                    addAlert(fullMessage, msgType, isIncident);
                 });
 
                 newConnection.on("transactionUpdate", (data: any) => {
@@ -476,6 +604,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                 setStatus('connected'); // Update status to connected
                 //addAlert("Real-time connection established", 'success', false);
                 console.log("Real-time connection established");
+                isConnectingRef.current = false; // Reset connecting flag
 
                 // Start health monitoring
                 startConnectionHealthCheck();
@@ -490,6 +619,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             updateConnectionStateRef.current(null);
             setStatus('error'); // Update status to error
             addAlert(`Connection failed: ${errorMessage}`, 'error', false);
+            isConnectingRef.current = false; // Reset connecting flag
 
             // Retry after delay if not too many attempts
             if (reconnectAttempts.current < maxReconnectAttempts.current) {
@@ -536,7 +666,12 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
 
     // Initialize connection when user is authenticated
     useEffect(() => {
-        console.log('🔌 Auth effect triggered - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'userID:', user?.userID, 'connection state:', connection?.state);
+        console.log('🔌 SignalR Auth effect triggered');
+        console.log('🔌 Auth effect - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user, 'userID:', user?.userID);
+        console.log('🔌 Auth effect - eventCodes from useAuth:', eventCodes?.length || 0, eventCodes);
+        console.log('🔌 Auth effect - localEventCodes:', localEventCodes?.length || 0, localEventCodes);
+        console.log('🔌 Auth effect - effectiveEventCodes:', effectiveEventCodes?.length || 0, effectiveEventCodes);
+        console.log('🔌 Auth effect - connection state:', connection?.state);
         console.log('🔌 localStorage check - authToken:', localStorage.getItem('authToken'), 'authUser:', localStorage.getItem('authUser'));
         
         // Don't attempt connection while auth is still loading
@@ -546,14 +681,32 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         }
         
         // Only proceed if we have all required data
-        if (isAuthenticated && user && user.userID && (!connection || connection.state === HubConnectionState.Disconnected)) {
-            console.log('🔌 User authenticated with userID, starting SignalR connection...');
+        if (isAuthenticated && user && user.userID && effectiveEventCodes && effectiveEventCodes.length > 0 && (!connection || connection.state === HubConnectionState.Disconnected)) {
+            console.log('🔌 User authenticated with userID and eventCodes available, starting SignalR connection...', { eventCodesCount: effectiveEventCodes.length });
             startConnection(user.userID).catch((error) => {
                 console.error('Failed to start SignalR connection:', error);
             });
         } else if (isAuthenticated && (!user || !user.userID)) {
             console.log('🔌 User authenticated but user data incomplete, waiting...', { user, userID: user?.userID });
             console.log('🔌 This suggests an issue with AuthContext loading user data');
+        } else if (isAuthenticated && (!effectiveEventCodes || effectiveEventCodes.length === 0)) {
+            console.log('🔌 User authenticated but eventCodes not available yet, waiting...', { effectiveEventCodes });
+            // Try to reload eventCodes and boxList from localStorage as fallback
+            try {
+                const storedEventCodes = localStorage.getItem('authEventCodes');
+                const storedBoxList = localStorage.getItem('authBoxList');
+                if (storedEventCodes) {
+                    const parsedEventCodes = JSON.parse(storedEventCodes);
+                    console.log('🔌 Found eventCodes in localStorage, retrying connection...', { eventCodesCount: parsedEventCodes.length });
+                    if (parsedEventCodes.length > 0) {
+                        startConnection(user?.userID).catch((error) => {
+                            console.error('Failed to start SignalR connection:', error);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('🔌 Error loading eventCodes from localStorage:', error);
+            }
         } else if (!isAuthenticated) {
             console.log('🔌 User not authenticated');
         }
@@ -563,7 +716,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             console.log('🔌 User logged out, stopping SignalR connection...');
             stopConnection();
         }
-    }, [isLoading, isAuthenticated, user, connection, startConnection, stopConnection]);
+    }, [isLoading, isAuthenticated, user, effectiveEventCodes, connection, startConnection, stopConnection]);
 
     // Update refs directly in the functions instead of using useEffect
     startRef.current = startConnection;

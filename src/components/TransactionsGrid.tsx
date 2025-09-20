@@ -13,6 +13,7 @@ import {
 import { getTransactions } from '../services/api';
 import { useSignalR } from '../contexts/SignalRContext';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDateTime } from '../utils/dateFormatter';
 
 // --- Types that match your API ---
 export type TxRow = {
@@ -20,6 +21,8 @@ export type TxRow = {
   timeStamp: string;  // ISO string
   boxID: number;
   eventCode: string;
+  eventDescription: string;
+  eventType: number;  // 0=info, 1=warning, 2=success, 3=error
   doorState: number;
   fingerprintNum: number;
   totalWeight: number;
@@ -44,29 +47,26 @@ type ApiResponse = {
 };
 
 // --- Helpers ---
-function eventLabel(code: string) {
-  switch (code) {
-    case 'C000': return 'Wifi connected';
-    case 'C001': return 'Box opened';
-    case 'C002': return 'Box closed';
-    case 'C003': return 'Parcel delivered';
-    case 'C004': return 'Parcel retrieved';
-    case 'C005': return 'Security deactivated';
-    case 'C006': return 'Security reactivated';
-    case 'C007': return 'Parcel stolen';
-    case 'C008': return 'Parcel returned';
-    case 'C009': return 'Box stolen';
-    case 'C010': return 'Box returned';
-    case 'D001': return 'Fingerprint Registered'
-    default: return 'Unknown';
+function getEventTypeColor(eventType: number): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' {
+  switch (eventType) {
+    case 0: return 'info';   // info
+    case 1: return 'warning';   // warning
+    case 2: return 'success';   // success
+    case 3: return 'error';     // error
+    default: return 'default';
   }
+}
+
+function getEventDescription(eventCode: string, eventCodes: any[]): string {
+  const event = eventCodes.find(e => e.eventCode === eventCode);
+  return event ? event.eventDescription : 'Unknown Event';
 }
 
 const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
-  const { user } = useAuth() as any; // adjust typing to your AuthContext
+  const { user, eventCodes } = useAuth() as any; // adjust typing to your AuthContext
 
   // grid state
   const [rows, setRows] = useState<TxRow[]>([]);
@@ -85,21 +85,27 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
         flex: 0.9,
         type: 'dateTime',
         //valueGetter: (row) => (row.value ? new Date(row.value as string) : null),
-        valueFormatter: (value) => (value ? (value as Date).toLocaleString() : ''),
+        valueFormatter: (value) => formatDateTime(value),
       },
       { field: 'boxID', headerName: 'Box ID', minWidth: 110, flex: 0.5 },
       {
-        field: 'eventCode',
-        headerName: 'Event',
+        field: 'eventDescription',
+        headerName: 'Event Description',
         minWidth: 200,
-        flex: 1.2,
-        renderCell: (params) => (
-          <Chip
-            label={`${params.value}: ${eventLabel(params.value as string)}`}
-            size="small"
-            variant="outlined"
-          />
-        ),
+        flex: 1.5,
+        renderCell: (params) => {
+          const eventCode = params.row.eventCode;
+          const eventDescription = getEventDescription(eventCode, eventCodes);
+          const eventType = params.row.eventType;
+          return (
+            <Chip
+              label={`${eventCode} - ${eventDescription}`}
+              size="small"
+              variant="outlined"
+              color={getEventTypeColor(eventType)}
+            />
+          );
+        },
       },
       {
         field: 'doorState',
@@ -107,7 +113,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
         minWidth: 120,
         flex: 0.6,
         renderCell: (params) => {
-          const open = Number(params.value) !== 0;
+          const open = Number(params.value) === 1;
           return (
             <Chip
               size="small"
@@ -118,7 +124,24 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
           );
         },
       },
-      { field: 'fingerprintNum', headerName: 'Fingerprint', minWidth: 120, flex: 0.6 },
+      {
+        field: 'boxPosition',
+        headerName: 'Position',
+        minWidth: 120,
+        flex: 0.6,
+        renderCell: (params) => {
+          const stolen = Number(params.value) === 1;
+          return (
+            <Chip
+              size="small"
+              label={stolen ? 'Stolen' : 'In place'}
+              color={stolen ? 'error' : 'success'}
+              variant="outlined"
+            />
+          );
+        },
+      },
+      { field: 'fingerprintNum', headerName: 'Fingerprint ID', minWidth: 100, flex: 0.6, type: 'number' },
       {
         field: 'totalWeight',
         headerName: 'Weight (g)',
@@ -127,7 +150,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
         flex: 0.6,
         valueFormatter: (value) => value != null ? Number(value as number).toLocaleString() : '',
       },
-      { field: 'boxPosition', headerName: 'Position', minWidth: 120, flex: 0.6 },
+
     ],
     []
   );
@@ -235,7 +258,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
           '& .MuiDataGrid-container--bottom': {
             backgroundColor: theme.palette.background.paper,
           },
-          '& .MuiDataGrid-cell': { 
+          '& .MuiDataGrid-cell': {
             outline: 'none',
             backgroundColor: theme.palette.background.paper,
           },
@@ -265,7 +288,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
           '& .MuiDataGrid-toolbarContainer': {
             backgroundColor: theme.palette.background.paper,
           },
-          '& .MuiDataGrid-virtualScroller': { 
+          '& .MuiDataGrid-virtualScroller': {
             overscrollBehavior: 'contain',
             backgroundColor: theme.palette.background.paper,
           },

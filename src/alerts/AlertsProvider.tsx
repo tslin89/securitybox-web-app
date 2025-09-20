@@ -2,7 +2,7 @@ import * as React from 'react';
 
 export type AlertItem = {
   id: string;                 // unique
-  message: string;
+  message: string;            // can contain HTML
   severity?: 'error' | 'warning' | 'info' | 'success';
   persistent?: boolean;       // stay until dismissed
   timestamp?: number;         // timestamp when alert was created
