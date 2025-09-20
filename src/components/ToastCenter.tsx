@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Snackbar, Alert, Stack, Box } from '@mui/material';
 import type { AlertColor } from '@mui/material';
 import { useAlerts } from '../alerts/AlertsProvider';
+import { formatTime } from '../utils/dateFormatter';
 // import { EVENT_SETS } from '../constants/events';
 
 export default function ToastCenter() {
@@ -79,16 +80,17 @@ export default function ToastCenter() {
               }}
             >
               <Box>
-                <Box sx={{ fontWeight: 'medium' }}>
-                  {toast.message}
-                </Box>
+                <Box 
+                  sx={{ fontWeight: 'medium' }}
+                  dangerouslySetInnerHTML={{ __html: toast.message }}
+                />
                 <Box sx={{ 
                   fontSize: '0.75rem', 
                   opacity: 0.8, 
                   mt: 0.5,
                   fontFamily: 'monospace'
                 }}>
-                  {toast.timestamp ? new Date(toast.timestamp).toLocaleTimeString() : 'Just now'}
+                  {formatTime(toast.timestamp)}
                 </Box>
               </Box>
             </Alert>
@@ -136,16 +138,17 @@ export default function ToastCenter() {
               }}
             >
               <Box>
-                <Box sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}>
-                  {alert.message}
-                </Box>
+                <Box 
+                  sx={{ fontWeight: 'bold', fontSize: '0.9rem' }}
+                  dangerouslySetInnerHTML={{ __html: alert.message }}
+                />
                 <Box sx={{ 
                   fontSize: '0.75rem', 
                   opacity: 0.9, 
                   mt: 0.5,
                   fontFamily: 'monospace'
                 }}>
-                  {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Just now'}
+                  {formatTime(alert.timestamp)}
                 </Box>
               </Box>
             </Alert>

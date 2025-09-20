@@ -16,8 +16,10 @@ import InputLabel from '@mui/material/InputLabel';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { BarChart, LineChart, PieChart } from '@mui/x-charts';
 import { getDashboardOverview } from '../services/api';
-import { EVENT_SETS, EVENT_LABELS } from '../constants/events';
+import { EVENT_SETS } from '../constants/events';
 import { useTheme } from '@mui/material/styles';
+import { formatTime } from '../utils/dateFormatter';
+import { useAuth } from '../contexts/AuthContext';
 
 function StatCard({ title, value }: { title: string; value: number | string }) {
   const theme = useTheme();
@@ -46,6 +48,7 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
 
 export default function MainGrid() {
   const theme = useTheme();
+  const { eventCodes } = useAuth();
   const [data, setData] = React.useState<Awaited<ReturnType<typeof getDashboardOverview>> | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -126,10 +129,16 @@ export default function MainGrid() {
   const incidentsParcelSeries = xDates.map(d => (byDate[d]['C007'] || 0));
   const incidentsBoxSeries = xDates.map(d => (byDate[d]['C009'] || 0));
 
+  // Helper function to get event description from API data
+  const getEventDescription = (eventCode: string) => {
+    const event = eventCodes.find(e => e.eventCode === eventCode);
+    return event ? event.eventDescription : 'Unknown Event';
+  };
+
   // Pie: event mix (last N days)
   const pieData = Object.entries(
     countsSinceStart.reduce((m, x) => { m[x.eventCode] = (m[x.eventCode] ?? 0) + x.total; return m; }, {} as Record<string, number>)
-  ).map(([code, total]) => ({ label: `${code} ${EVENT_LABELS[code] ?? ''}`, value: total }));
+  ).map(([code, total]) => ({ label: `${code} ${getEventDescription(code)}`, value: total }));
 
   return (
     <Box>
@@ -139,7 +148,7 @@ export default function MainGrid() {
           <Typography variant="h5" sx={{ fontWeight: 600 }} component="h1">Dashboard</Typography>
           {lastUpdated && (
             <Typography variant="body2" color="text.secondary">
-              Last updated: {lastUpdated.toLocaleTimeString()}
+              Last updated: {formatTime(lastUpdated)}
             </Typography>
           )}
         </Box>

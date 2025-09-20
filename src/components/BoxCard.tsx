@@ -26,6 +26,7 @@ import {
 import { BoxData, unlockDevice } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import FingerprintManager from './FingerprintManager';
+import { formatDateTime } from '../utils/dateFormatter';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
 
 interface BoxCardProps {
@@ -99,14 +100,6 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
   const isFingerprintEnabled = (user as any)?.fingerprintEnabled ?? false;
   const hasUserFingerprint = box.userFingerprintNum > 0;
 
-  const formatDateTime = (dateTime: string | null) => {
-    if (!dateTime) return 'Unknown';
-    try {
-      return new Date(dateTime).toLocaleString();
-    } catch {
-      return 'Invalid date';
-    }
-  };
 
   const getDoorStateInfo = () => {
     if (box.doorState === null) return { text: 'Unknown', color: 'default' as const };
@@ -118,8 +111,8 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
   const getBoxPositionInfo = () => {
     if (box.boxPosition === null) return { text: 'Unknown', color: 'default' as const };
     return box.boxPosition === 1
-      ? { text: 'In place', color: 'success' as const }
-      : { text: 'Stolen', color: 'error' as const };
+      ? { text: 'Stolen', color: 'error' as const }
+      : { text: 'In place', color: 'success' as const };
   };
 
   const getWeightInfo = () => {

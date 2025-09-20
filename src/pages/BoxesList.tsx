@@ -95,7 +95,7 @@ export default function BoxesList() {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Security Boxes
+              Box Status & Security Control
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Monitor and manage your IoT Enabled Security Boxes.

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
@@ -10,10 +9,10 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import { 
-  startFingerprintOnDevice, 
-  deleteFingerprint, 
-  checkFingerprintStatus 
+import {
+  startFingerprintOnDevice,
+  deleteFingerprint,
+  checkFingerprintStatus
 } from '../services/api';
 
 export interface FingerprintManagerProps {
@@ -92,7 +91,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
         console.log('Calling startFingerprintOnDevice...');
         const response = await startFingerprintOnDevice(deviceId, userID, boxID);
         console.log('startFingerprintOnDevice response:', response);
-        
+
         if (response.status !== 1) {
           const errorMessage = response.message || 'Failed to start fingerprint setup. Please try again.';
           console.error('Fingerprint setup failed:', errorMessage);
@@ -119,7 +118,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
               setResultFingerprintNum(result.fingerprintNum);
               setStatus('success');
               setHasPendingSetup(false);
-              
+
               // Auto-close after 3 seconds
               setTimeout(() => {
                 onSuccess?.(result.fingerprintNum);
@@ -153,7 +152,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
         }
 
         const response = await deleteFingerprint(deviceId, userID, fingerprintNum, boxID);
-        
+
         if (response.status !== 1) {
           const errorMessage = response.message || 'Failed to remove fingerprint. Please try again.';
           setError(errorMessage);
@@ -162,7 +161,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
         }
 
         setStatus('success');
-        
+
         // Auto-close after 2 seconds
         setTimeout(() => {
           onSuccess?.();
@@ -193,34 +192,20 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     onClose();
   }, [status, onClose]);
 
-  const getDialogTitle = () => {
-    switch (status) {
-      case 'success':
-        return type === 'add' ? 'Fingerprint Setup Complete!' : 'Fingerprint Removed Successfully!';
-      case 'error':
-        return type === 'add' ? 'Fingerprint Setup Failed' : 'Fingerprint Removal Failed';
-      case 'timeout':
-        return 'Fingerprint Setup Timeout';
-      case 'processing':
-        return type === 'add' ? 'Starting Fingerprint Setup...' : 'Processing Fingerprint Removal...';
-      default:
-        return type === 'add' ? 'Fingerprint Setup' : 'Remove Fingerprint';
-    }
-  };
 
   const getDialogContent = () => {
     if (status === 'success') {
       return (
         <>
-          <Box component="img" 
-               src="/success.png" 
-               alt="Success" 
-               sx={{ width: 60, height: 'auto', margin: 1 }} />
+          <Box component="img"
+            src="/success.png"
+            alt="Success"
+            sx={{ width: 60, height: 'auto', margin: 1 }} />
           <Typography variant="h6" color="success.main" gutterBottom>
             {type === 'add' ? 'Fingerprint Setup Complete!' : 'Fingerprint Removed Successfully!'}
           </Typography>
           <Typography color="text.secondary">
-            {type === 'add' 
+            {type === 'add'
               ? `Fingerprint has been registered successfully. Fingerprint number: ${resultFingerprintNum}`
               : 'Fingerprint has been removed from the device.'
             }
@@ -236,7 +221,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
             {error}
           </Alert>
           <Typography color="text.secondary">
-            {type === 'add' 
+            {type === 'add'
               ? 'Please try again or contact support if the problem persists.'
               : 'Please try again or contact support if the problem persists.'
             }
@@ -261,18 +246,18 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     if (status === 'waiting') {
       return (
         <>
-          <Box component="img" 
-               src="/fingerprint.svg" 
-               alt="Setup Fingerprint" 
-               sx={{ width: 60, height: 'auto', margin: 1 }} />
+          <Box component="img"
+            src="/fingerprint.svg"
+            alt="Setup Fingerprint"
+            sx={{ width: 60, height: 'auto', margin: 1 }} />
           <Typography variant="h6" gutterBottom>
-            {type === 'add' 
+            {type === 'add'
               ? 'Continue fingerprint setup on IoT device'
               : 'Processing fingerprint removal...'
             }
           </Typography>
           <Typography color="text.secondary">
-            {type === 'add' 
+            {type === 'add'
               ? 'Please follow the instructions on your IoT device to complete the fingerprint registration.'
               : 'Please wait while the fingerprint is being removed from the device.'
             }
@@ -290,18 +275,18 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     if (status === 'processing') {
       return (
         <>
-          <Box component="img" 
-               src="/fingerprint.svg" 
-               alt="Setup Fingerprint" 
-               sx={{ width: 60, height: 'auto', margin: 1 }} />
+          <Box component="img"
+            src="/fingerprint.svg"
+            alt="Setup Fingerprint"
+            sx={{ width: 60, height: 'auto', margin: 1 }} />
           <Typography variant="h6" gutterBottom>
-            {type === 'add' 
+            {type === 'add'
               ? 'Starting fingerprint setup...'
               : 'Processing fingerprint removal...'
             }
           </Typography>
           <Typography color="text.secondary">
-            {type === 'add' 
+            {type === 'add'
               ? 'Please wait while we initiate the fingerprint registration process on your IoT device.'
               : 'Please wait while we process the fingerprint removal request.'
             }
@@ -323,13 +308,13 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
               There is already a pending fingerprint setup for this user. Sending another signal will restart the process.
             </Alert>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-              This will send a new fingerprint registration signal for user ID on {deviceDescription || 'device'} ({deviceId}). 
+              This will send a new fingerprint registration signal for user ID on {deviceDescription || 'device'} ({deviceId}).
               The previous setup will be replaced.
             </Typography>
           </>
         ) : (
           <Typography color="text.secondary" sx={{ mb: 2 }}>
-            {type === 'add' 
+            {type === 'add'
               ? `This will start the fingerprint registration process for user ID on ${deviceDescription || 'device'} (${deviceId}).`
               : `This will remove fingerprint number ${fingerprintNum} for user ID from ${deviceDescription || 'device'} (${deviceId}).`
             }
@@ -347,7 +332,15 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
   const getDialogActions = () => {
     if (status === 'success' || status === 'timeout') {
       return (
-        <Button onClick={onClose} variant="contained" color="primary">
+        <Button
+          onClick={onClose}
+          variant="contained"
+          color="primary"
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            minWidth: { md: 120 }
+          }}
+        >
           Close
         </Button>
       );
@@ -356,11 +349,27 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     if (status === 'error') {
       return (
         <>
-          <Button onClick={onClose} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleStartOperation} variant="contained" color="primary">
+
+          <Button
+            onClick={handleStartOperation}
+            variant="contained"
+            color="primary"
+            sx={{
+              width: { xs: '100%', md: 'auto' },
+              minWidth: { md: 120 }
+            }}
+          >
             Try Again
+          </Button>
+          <Button
+            onClick={onClose}
+            color="primary"
+            sx={{
+              width: { xs: '100%', md: 'auto' },
+              minWidth: { md: 120 }
+            }}
+          >
+            Cancel
           </Button>
         </>
       );
@@ -371,7 +380,10 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
         <Button
           variant="outlined"
           onClick={onClose}
-          sx={{ minWidth: 120 }}
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            minWidth: { md: 120 }
+          }}
         >
           Cancel
         </Button>
@@ -384,7 +396,10 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
           variant="outlined"
           onClick={handleDismiss}
           disabled={!showDismissButton}
-          sx={{ minWidth: 120 }}
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            minWidth: { md: 120 }
+          }}
         >
           Dismiss
         </Button>
@@ -394,19 +409,31 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
     // Initial state
     return (
       <>
-        <Button onClick={onClose} color="primary">
-          Cancel
-        </Button>
-        <Button 
-          onClick={handleStartOperation} 
-          variant="contained" 
+
+        <Button
+          onClick={handleStartOperation}
+          variant="contained"
           color={type === 'remove' ? 'error' : 'primary'}
           disabled={false}
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            minWidth: { md: 120 }
+          }}
         >
-          {type === 'add' 
+          {type === 'add'
             ? (hasPendingSetup ? 'Restart Setup' : 'Start Setup')
             : 'Remove Fingerprint'
           }
+        </Button>
+        <Button
+          onClick={onClose}
+          color="primary"
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            minWidth: { md: 120 }
+          }}
+        >
+          Cancel
         </Button>
       </>
     );
@@ -420,13 +447,16 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
       fullWidth
       disableEscapeKeyDown={status === 'waiting' || status === 'processing'}
     >
-      <DialogTitle>
-        {getDialogTitle()}
-      </DialogTitle>
       <DialogContent sx={{ textAlign: 'center', py: 3 }}>
         {getDialogContent()}
       </DialogContent>
-      <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+      <DialogActions sx={{
+        justifyContent: 'center',
+        pb: 3,
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: { xs: 1, md: 2 },
+        px: { xs: 2, md: 3 }
+      }}>
         {getDialogActions()}
       </DialogActions>
     </Dialog>

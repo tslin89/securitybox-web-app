@@ -145,9 +145,18 @@ const GlobalAlerts: React.FC = () => {
                 </span>
               </div>
               <div style={{ marginLeft: '12px', flex: 1 }}>
-                <p style={{ fontSize: '14px', fontWeight: '500', margin: 0 }}>
-                  {alert.message}
-                </p>
+                <div 
+                  style={{ fontSize: '14px', fontWeight: '500', margin: 0 }}
+                  dangerouslySetInnerHTML={{ __html: alert.message }}
+                />
+                {/* Debug: Show raw message */}
+                <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+                  Raw: {alert.message}
+                </div>
+                {/* Test HTML rendering */}
+                <div style={{ fontSize: '10px', color: '#666', marginTop: '4px' }}>
+                  Test: <span dangerouslySetInnerHTML={{ __html: '<b>Bold Test</b><br/>Line Break' }} />
+                </div>
               </div>
               <div style={{ marginLeft: '12px', flexShrink: 0 }}>
                 <button
