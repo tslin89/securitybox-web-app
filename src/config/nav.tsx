@@ -13,7 +13,7 @@ export const mainNav: NavItem[] = [
   { label: 'Dashboard',         to: '/dashboard', icon: <HomeRounded /> },
   { label: 'Users',      to: '/users',     icon: <GroupRounded /> },
   { label: 'Transactions', to: '/translist', icon: <ReceiptLongRounded /> },
-  { label: 'Boxes', to: '/boxlist', icon: <StorageRounded /> },
+  { label: 'Box Status & Control', to: '/boxlist', icon: <StorageRounded /> },
 ];
 
 export const secondaryNav: NavItem[] = [

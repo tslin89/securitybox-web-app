@@ -1,5 +1,6 @@
 // contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User } from '../services/api';
 
 interface Box {
   boxID: number;
@@ -13,13 +14,6 @@ interface EventCode {
   eventType: number;
 }
 
-interface User {
-  userID: number;
-  userName: string;
-  email: string;
-  phoneNo: string;
-  boxID: number;
-}
 
 interface LoginResponse {
   transactionID?: string;

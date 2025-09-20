@@ -34,10 +34,18 @@ interface SideMenuMobileProps {
   toggleDrawer: (newOpen: boolean) => () => void;
 }
 
-function NavList({ items, onItemClick }: { items: typeof mainNav; onItemClick?: () => void }) {
+function NavList({ items, onItemClick, userType }: { items: typeof mainNav; onItemClick?: () => void; userType?: number }) {
+  // Filter items based on userType - only show Transactions for userType 1
+  const filteredItems = items.filter(item => {
+    if (item.label === 'Transactions') {
+      return userType === 1;
+    }
+    return true; // Show all other items
+  });
+
   return (
     <List sx={{ px: 1 }}>
-      {items.map((item) => (
+      {filteredItems.map((item) => (
         <ListItem key={item.to} disablePadding>
           <ListItemButton
             component={NavLink}
@@ -144,7 +152,7 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
         </Stack>
         <Divider />
         <Stack sx={{ flexGrow: 1 }}>
-          <NavList items={mainNav} onItemClick={toggleDrawer(false)} />
+          <NavList items={mainNav} onItemClick={toggleDrawer(false)} userType={user?.userType} />
         </Stack>
         <Divider />
         <Stack>
@@ -152,7 +160,7 @@ export default function SideMenuMobile({ open, toggleDrawer }: SideMenuMobilePro
         </Stack>
         <Stack sx={{ p: 2 }}>
           <Button variant="outlined" fullWidth startIcon={<LogoutRoundedIcon />} onClick={doLogout}>
-            Logout
+            Sign Out
           </Button>
         </Stack>
       </Stack>

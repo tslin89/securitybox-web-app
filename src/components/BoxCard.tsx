@@ -12,6 +12,7 @@ import {
   Alert,
   CircularProgress,
   useTheme,
+  Divider,
 } from '@mui/material';
 import {
   LockOpen as LockOpenIcon,
@@ -19,9 +20,12 @@ import {
   Security as SecurityIcon,
   Scale as ScaleIcon,
   Schedule as ScheduleIcon,
+  Fingerprint as FingerprintIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { BoxData, unlockDevice } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import FingerprintManager from './FingerprintManager';
 import GpsNotFixedIcon from '@mui/icons-material/GpsNotFixed';
 
 interface BoxCardProps {
@@ -36,6 +40,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [showFingerprintDialog, setShowFingerprintDialog] = useState(false);
 
   const handleRefresh = async () => {
     if (!user) return;
@@ -56,7 +61,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
     setIsUnlocking(true);
     try {
 
-      const response = await unlockDevice(box.deviceID, user.userID);
+      const response = await unlockDevice(box.deviceID, user.userID, box.boxID);
       if (response.status === 1) {
         setSnackbarMessage('Pause security command sent successfully to selected device.');
         setSnackbarOpen(true);
@@ -74,6 +79,25 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
       setIsUnlocking(false);
     }
   };
+
+  const handleFingerprintSuccess = (fingerprintNum?: number) => {
+    setSnackbarMessage(
+      fingerprintNum 
+        ? `Fingerprint registered successfully! Number: ${fingerprintNum}`
+        : 'Fingerprint removed successfully!'
+    );
+    setSnackbarOpen(true);
+    setShowFingerprintDialog(false);
+    // Refresh the box data to get updated fingerprint status
+    onRefresh(box.boxID);
+  };
+
+  const handleFingerprintClick = () => {
+    setShowFingerprintDialog(true);
+  };
+
+  const isFingerprintEnabled = (user as any)?.fingerprintEnabled ?? false;
+  const hasUserFingerprint = box.userFingerprintNum > 0;
 
   const formatDateTime = (dateTime: string | null) => {
     if (!dateTime) return 'Unknown';
@@ -137,7 +161,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
             />
             <Box sx={{ flexGrow: 1 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
-                {box.description}
+                {box.boxDescription}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                 {box.deviceID}
@@ -204,8 +228,60 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
               />
             </Box>
 
+            {isFingerprintEnabled && (
+              <>
+                <Divider />
+
+                {/* Fingerprint Status */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FingerprintIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: '80px', flexGrow: 1 }}>
+                    Fingerprint:
+                  </Typography>
+                  {hasUserFingerprint ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip
+                        label={`Registered`}
+                        color="success"
+                        size="small"
+                        variant="outlined"
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={handleFingerprintClick}
+                        color="error"
+                        sx={{ p: 0.5 }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Box>
+                  ) : (
+                    <Button
+                      variant="text"
+                      color="primary"
+                      onClick={handleFingerprintClick}
+                      size="small"
+                      sx={{ 
+                        textTransform: 'none',
+                        minWidth: 'auto',
+                        p: 0.5,
+                        fontSize: '0.75rem',
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      Register
+                    </Button>
+                  )}
+                </Box>
+
+                <Divider />
+              </>
+            )}
+
           </Box>
         </CardContent>
+
+       
 
         <CardActions sx={{ pt: 0, px: 0, pb: 0, justifyContent: 'space-between' }}>
           <Button
@@ -218,7 +294,6 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
           >
             {isUnlocking ? 'Pausing...' : 'Pause Security'}
           </Button>
-
 
           <IconButton
             onClick={handleRefresh}
@@ -245,6 +320,19 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* Fingerprint Manager Dialog */}
+      <FingerprintManager
+        open={showFingerprintDialog}
+        onClose={() => setShowFingerprintDialog(false)}
+        onSuccess={handleFingerprintSuccess}
+        userID={box.userID}
+        boxID={box.boxID}
+        deviceId={box.deviceID}
+        deviceDescription={box.boxDescription}
+        fingerprintNum={hasUserFingerprint ? box.userFingerprintNum : undefined}
+        type={hasUserFingerprint ? 'remove' : 'add'}
+      />
     </>
   );
 }

@@ -212,7 +212,7 @@ export interface CreateUserRequest {
   phoneNo?: string;
   password: string;
   userType: number;
-  boxID: number;
+  boxID?: number;
   fingerprintEnabled?: boolean;
   isEnabled?: boolean;
 }
@@ -315,8 +315,8 @@ export const updateUser = async (userId: number, userData: UpdateUserRequest): P
   return response.json();
 };
 
-export const checkFingerprintStatus = async (userId: number): Promise<{ fingerprintNum?: number }> => {
-  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/fingerprint-status?code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
+export const checkFingerprintStatus = async (userId: number, boxId: number): Promise<{ fingerprintNum?: number }> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/fingerprint-status?boxId=${boxId}&code=7y1EprCqlSY184e44oJMSfnp6rQTPDZIZQB3kvlFczkkAzFuw1R38w==`);
   
   if (!response.ok) {
     throw new Error('Failed to check fingerprint status');
@@ -324,23 +324,6 @@ export const checkFingerprintStatus = async (userId: number): Promise<{ fingerpr
 
   return response.json();
 };
-
-export async function startFingerprintOnDevice(deviceId: string, userId: number) {
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    // include auth if needed
-    body: JSON.stringify({ 
-      deviceId, 
-      userId,
-      eventCode: "D001" // add fingerprint
-     })
-  });
-  if (!res.ok) {
-    throw new Error(await res.text());
-  }
-  return res.json();
-}
 
 // Event Settings API Methods
 
@@ -361,8 +344,10 @@ export interface EventSettingsResponse {
 // Box Status API Types
 export interface BoxData {
   deviceID: string;
-  description: string;
+  boxDescription: string; // Changed from description to boxDescription
   timeStamp: string | null;
+  userFingerprintNum: number; // New field for user's fingerprint number
+  userID: number; // Changed from nullable to required
   id: number;
   boxID: number;
   eventCode: string | null;
@@ -370,7 +355,6 @@ export interface BoxData {
   fingerprintNum: number | null;
   totalWeight: number | null; // in grams
   boxPosition: number | null;
-  userID: number | null;
   transactionID: string | null;
   receivedTime: string | null;
 }
@@ -430,17 +414,45 @@ export const getLastEventData = async (userId: number, boxID: number = 0): Promi
   return response.json();
 };
 
-export async function unlockDevice(deviceId: string, userId: number) {
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
+export const getUserBoxData = async (userId: number, boxID: number = 0): Promise<BoxStatusResponse> => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/users/${userId}/boxdata?boxID=${boxID}&code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch user box data');
+  }
+
+  return response.json();
+};
+
+const invokeDeviceSignal = async (deviceId: string, userId: number, eventCode: string, boxId: number, fingerprintNum: number = 0) => {
+  const response = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    // include auth if needed
     body: JSON.stringify({ 
       deviceId, 
-      userId,
-      eventCode: "D003" // unlock security
-     })
+      userId, 
+      eventCode,
+      boxId,
+      fingerprintNum
+    })
   });
+  return response;
+}
+
+export async function startFingerprintOnDevice(deviceId: string, userId: number, boxId: number) {
+
+  const res = await invokeDeviceSignal(deviceId, userId, "D001", boxId, 0);
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json();
+}
+
+export async function unlockDevice(deviceId: string, userId: number, boxId: number) {
+
+  const res = await invokeDeviceSignal(deviceId, userId, "D003", boxId, 0);
+
   if (!res.ok) {
     throw new Error(await res.text());
   }
@@ -448,18 +460,9 @@ export async function unlockDevice(deviceId: string, userId: number) {
 }
 
 
-export async function deleteFingerprint(deviceId: string, userId: number, fingerprintNum: number) {
-  const res = await fetch(`${AZURE_FUNCTIONS_BASE_URL}/device/sendsignal?code=Wz8uG-2_xw3OgikaScK9orz0lHphlxwFB8TdEq2adx-iAzFu3rkfsA==`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    // include auth if needed
-    body: JSON.stringify({ 
-      deviceId, 
-      userId,
-      fingerprintNum,
-      eventCode: "D002" // unlock security
-     })
-  });
+export async function deleteFingerprint(deviceId: string, userId: number, fingerprintNum: number, boxId: number) {
+  const res = await invokeDeviceSignal(deviceId, userId, "D002", boxId, fingerprintNum);
+
   if (!res.ok) {
     throw new Error(await res.text());
   }

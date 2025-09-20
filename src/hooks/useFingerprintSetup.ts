@@ -6,9 +6,10 @@ type Status = "idle" | "waiting" | "success" | "error" | "timeout";
 interface Options {
   intervalMs?: number;   // default 5000
   maxAttempts?: number;  // default 24 (≈2 minutes)
+  boxId?: number;        // box ID for fingerprint status checking
 }
 
-export function useFingerprintSetup({ intervalMs = 5000, maxAttempts = 24 }: Options = {}) {
+export function useFingerprintSetup({ intervalMs = 5000, maxAttempts = 24, boxId }: Options = {}) {
   const [status, setStatus] = useState<Status>("idle");
   const [fingerprintNum, setFingerprintNum] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | undefined>(undefined);
@@ -29,10 +30,10 @@ export function useFingerprintSetup({ intervalMs = 5000, maxAttempts = 24 }: Opt
 
   const pollOnce = useCallback(async () => {
     const uid = activeUserRef.current;
-    if (!runningRef.current || uid == null) return;
+    if (!runningRef.current || uid == null || !boxId) return;
 
     try {
-      const res = await checkFingerprintStatus(uid); // must return { fingerprintNum?: number }
+      const res = await checkFingerprintStatus(uid, boxId); // must return { fingerprintNum?: number }
       if (res?.fingerprintNum) {
         setFingerprintNum(res.fingerprintNum);
         setStatus("success");
@@ -53,7 +54,7 @@ export function useFingerprintSetup({ intervalMs = 5000, maxAttempts = 24 }: Opt
       stop();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attempts, intervalMs, maxAttempts, stop]);
+  }, [attempts, intervalMs, maxAttempts, stop, boxId]);
 
   const start = useCallback((userId: number) => {
     // reset state

@@ -69,6 +69,8 @@ const Login: React.FC = () => {
               email: result.data?.user?.email || 'unknown',
               phoneNo: result.data?.user?.phoneNo || '',
               boxID: result.data?.user?.boxID || -1,
+              fingerprintEnabled: result.data?.user?.fingerprintEnabled || false,
+              userType: result.data?.user?.userType || 2
             },
             boxList: result.data?.boxList || [],
             eventCodes: result.data?.eventCodes || [],
@@ -131,7 +133,7 @@ const Login: React.FC = () => {
               <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 50, height: 'auto', marginBottom: 2 }} />
             </Box>
             <Typography component="h2" variant="h6" sx={{ fontWeight: 600, textAlign: 'center' }}>
-              Winter Security System Login
+              Winter Security System Sign In
             </Typography>
 
             <Typography variant="body2" color="text.secondary">

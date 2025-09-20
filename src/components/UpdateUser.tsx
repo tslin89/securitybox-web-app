@@ -1,6 +1,5 @@
-import { updateUser, getUser, checkFingerprintStatus, startFingerprintOnDevice, deleteUser, deleteFingerprint } from '../services/api';
+import { updateUser, getUser, deleteUser } from '../services/api';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 
 import {
   Box,
@@ -13,17 +12,7 @@ import {
   FormControlLabel,
   Alert,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  DialogContentText,
-  Stack,
-  Chip,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
+  Stack
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTheme } from '@mui/material/styles';
@@ -59,9 +48,6 @@ interface User {
   email: string;
   phoneNo?: string;
   userType: number;
-  boxID?: number;
-  fingerprintNum?: number;
-  fingerprintEnabled?: boolean;
   isEnabled?: boolean;
 }
 
@@ -73,8 +59,6 @@ interface UpdateUserProps {
 
 const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) => {
   const theme = useTheme();
-  const { user: currentUser, boxList } = useAuth();
-
   const [formData, setFormData] = useState({
     userName: '',
     email: '',
@@ -82,8 +66,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     password: '',
     confirmPassword: '',
     userType: 2,
-    boxID: 0,
-    fingerprintEnabled: false,
     isEnabled: true
   });
 
@@ -92,17 +74,9 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
   const [loading, setLoading] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showFingerprintPopover, setShowFingerprintPopover] = useState(false);
-  const [fingerprintLoading, setFingerprintLoading] = useState(false);
-  const [fingerprintSuccess, setFingerprintSuccess] = useState(false);
-  const [selectedBox, setSelectedBox] = useState<any>(null);
-  const [showDismissButton, setShowDismissButton] = useState(false);
-  const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
-  const [showFingerprintDialog, setShowFingerprintDialog] = useState(false);
-  const [fingerprintError, setFingerprintError] = useState<string | null>(null);
 
   // Check if current user is trying to delete themselves
-  const isCurrentUser = currentUser && currentUser.userID === userId;
+  const isCurrentUser = false; // Simplified since we removed currentUser context
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
@@ -151,10 +125,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       const user = await getUser(userId);
       setOriginalUser(user);
 
-      // Find the box for this user
-      const userBox = boxList.find(b => b.boxID === (user as any).boxID);
-      setSelectedBox(userBox);
-
       setFormData({
         userName: user.userName,
         email: user.email,
@@ -162,8 +132,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         password: '',
         confirmPassword: '',
         userType: user.userType,
-        boxID: (user as any).boxID || 0,
-        fingerprintEnabled: user.fingerprintEnabled || false,
         isEnabled: user.isEnabled ?? true
       });
     } catch (err) {
@@ -171,27 +139,19 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     } finally {
       setLoadingUser(false);
     }
-  }, [userId, boxList]);
+  }, [userId]);
 
   useEffect(() => {
     loadUser();
   }, [loadUser]);
 
-  // Cleanup interval on component unmount
-  useEffect(() => {
-    return () => {
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-    };
-  }, [checkInterval]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked :
-        (name === 'userType' || name === 'boxID') ? Number(value) : value
+        (name === 'userType') ? Number(value) : value
     }));
   };
 
@@ -202,20 +162,10 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     }));
   };
 
-  const handleBoxChange = (boxID: number) => {
-    const box = boxList.find(b => b.boxID === boxID);
-    setSelectedBox(box);
-    setFormData(prev => ({
-      ...prev,
-      boxID: boxID
-    }));
-  };
-
   const validateForm = () => {
     if (!formData.userName.trim()) return 'User Name is required';
     if (!formData.email.trim()) return 'Email is required';
     if (!/\S+@\S+\.\S+/.test(formData.email)) return 'Invalid email format';
-    if (formData.boxID === 0) return 'Please select a box';
     if (changePassword) {
       if (!formData.password.trim()) return 'Password is required';
       if (formData.password.length < 6) return 'Password must be at least 6 characters';
@@ -244,8 +194,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
         email: formData.email,
         phoneNo: formData.phoneNo || undefined,
         userType: formData.userType,
-        boxID: formData.boxID,
-        fingerprintEnabled: formData.fingerprintEnabled,
         isEnabled: formData.isEnabled
       };
 
@@ -254,16 +202,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
       }
 
       await updateUser(userId, updateData);
-
-      // Check if fingerprint was newly enabled and needs setup
-      const needsFingerprintSetup = formData.fingerprintEnabled &&
-        (!originalUser?.fingerprintEnabled || !originalUser?.fingerprintNum);
-
-      if (needsFingerprintSetup) {
-        startFingerprintSetup();
-      } else {
-        onSuccess?.();
-      }
+      onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update user');
     } finally {
@@ -280,48 +219,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
 
     if (!confirmed) return;
 
-    // Check if user has fingerprint enabled and fingerprintNum
-    if (originalUser.fingerprintEnabled && originalUser.fingerprintNum && originalUser.boxID) {
-      // Find the deviceId for the user's box
-      const userBox = boxList.find(box => box.boxID === originalUser.boxID);
-      
-      if (userBox) {
-        try {
-          setLoading(true);
-          setError(null);
-          
-          // Try to delete fingerprint from device
-          const response = await deleteFingerprint(userBox.deviceID, originalUser.userID, originalUser.fingerprintNum);
-          
-          if (response.status !== 1) {
-            // Fingerprint deletion failed, show confirmation dialog
-            setFingerprintError(response.message || 'Unable to remove fingerprint on the device');
-            setShowFingerprintDialog(true);
-            return;
-          }
-        } catch (err) {
-          // Fingerprint deletion failed, show confirmation dialog
-          setFingerprintError('Unable to remove fingerprint on the device');
-          setShowFingerprintDialog(true);
-          return;
-        }
-      }
-    }
-
-    // Proceed with normal user deletion
-    await performUserDeletion();
-  };
-
-  const performUserDeletion = async () => {
-    if (!originalUser) return;
-
     try {
       setLoading(true);
       setError(null);
 
-      // Use 0 as default if fingerprintNum is undefined
-      const fingerprintNum = originalUser.fingerprintNum ?? 0;
-      await deleteUser(originalUser.userID, fingerprintNum);
+      await deleteUser(originalUser.userID, 0);
 
       // Call onSuccess to close the dialog and refresh the list
       onSuccess?.();
@@ -332,86 +234,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
     }
   };
 
-  const handleFingerprintDialogConfirm = async () => {
-    setShowFingerprintDialog(false);
-    setFingerprintError(null);
-    await performUserDeletion();
-  };
-
-  const handleFingerprintDialogCancel = () => {
-    setShowFingerprintDialog(false);
-    setFingerprintError(null);
-    setLoading(false);
-  };
-
-  const startFingerprintSetup = async () => {
-    console.log('Sending fingerprint setup signal to IoT device for user:', userId);
-
-    // Start fingerprint setup
-    try {
-      const response = await startFingerprintOnDevice(selectedBox?.deviceID || "demo-device-raspberrypi", userId);
-      if (response.status !== 1) {
-        const errorMessage = response.message || 'Failed to start fingerprint setup. Please try again.';
-        alert(`User account was created but unable to initiate fingerprint registration on selected security box. Please try again later.\n\nError: ${errorMessage}`);
-        onSuccess?.(); // Redirect to user list since user update was successful
-        return;
-      }
-    } catch (err) {
-      console.error('Error starting fingerprint setup:', err);
-      setError('Failed to start fingerprint setup. Please try again.');
-      onSuccess?.(); // Redirect to user list since user update was successful
-      return;
-    }
-
-    // Only show popup and start interval checking if startFingerprintOnDevice was successful
-    setFingerprintLoading(true);
-    setShowDismissButton(true); // Enable dismiss button immediately
-    setShowFingerprintPopover(true);
-
-    // Simulate periodic checking for fingerprint registration
-    const interval = setInterval(async () => {
-      try {
-        const result = await checkFingerprintStatus(userId);
-        if (result.fingerprintNum && result.fingerprintNum !== originalUser?.fingerprintNum) {
-          clearInterval(interval);
-          setCheckInterval(null);
-          setFingerprintLoading(false);
-          setFingerprintSuccess(true);
-          setTimeout(() => {
-            setShowFingerprintPopover(false);
-            onSuccess?.();
-          }, 2000);
-        }
-      } catch (err) {
-        console.error('Error checking fingerprint status:', err);
-      }
-    }, 5000);
-
-    setCheckInterval(interval);
-
-    // Cleanup interval after 5 minutes
-    setTimeout(() => {
-      if (interval) {
-        clearInterval(interval);
-        setCheckInterval(null);
-      }
-      if (fingerprintLoading) {
-        setFingerprintLoading(false);
-        setError('Fingerprint setup timeout. Please try again.');
-      }
-    }, 300000);
-  };
-
-  const handleDismiss = () => {
-    // Clear the interval when dismissing
-    if (checkInterval) {
-      clearInterval(checkInterval);
-      setCheckInterval(null);
-    }
-    setShowFingerprintPopover(false);
-    // Navigate back to user list immediately
-    onSuccess?.();
-  };
 
 
   if (loadingUser) {
@@ -450,50 +272,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
             )}
 
             <Box>
-              {/* Box Selection - Top Row */}
-              <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                gap: 2,
-                mb: 2,
-              }}>
-                <FormControl fullWidth variant="filled" sx={textFieldStyles}>
-                  <InputLabel>Select Box</InputLabel>
-                  <Select
-                    value={formData.boxID}
-                    onChange={(e) => handleBoxChange(Number(e.target.value))}
-                    label="Select Box"
-                  >
-                    <MenuItem value={0}>
-                      <em>Please select a box</em>
-                    </MenuItem>
-                    {boxList.map((box) => (
-                      <MenuItem key={box.boxID} value={box.boxID}>
-                        {box.description}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                {selectedBox && (
-                  <TextField
-                    fullWidth
-                    label="Device ID"
-                    value={selectedBox.deviceID}
-                    variant="filled"
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    sx={{
-                      ...textFieldStyles,
-                      '& .MuiFilledInput-root': {
-                        ...textFieldStyles['& .MuiFilledInput-root'],
-                        backgroundColor: theme.palette.action.disabledBackground,
-                        cursor: 'default',
-                      },
-                    }}
-                  />
-                )}
-              </Box>
 
               <Box sx={{
                 display: 'grid',
@@ -596,35 +374,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
                 <option value={2}>User</option>
               </TextField>
 
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.fingerprintEnabled}
-                    onChange={() => handleToggleChange('fingerprintEnabled')}
-                    color="primary"
-                  />
-                }
-                label="Fingerprint Enabled"
-                sx={{ mb: 2 }}
-              />
-
-                {(originalUser?.fingerprintNum && originalUser.fingerprintNum > 0) ? (
-                <Box sx={{
-                  backgroundColor: theme.palette.action.hover,
-                  padding: 2,
-                  borderRadius: 1,
-                  mb: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}>
-                  <Chip
-                    label={`Fingerprint ID: ${originalUser?.fingerprintNum}`}
-                    color="primary"
-                    variant="outlined"
-                  />
-                </Box>
-                ) : null}
 
               <FormControlLabel
                 control={
@@ -678,80 +427,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
           </CardContent>
         </Card>
       </Box>
-
-      {/* Fingerprint Setup Dialog */}
-      <Dialog
-        open={showFingerprintPopover}
-        maxWidth="sm"
-        fullWidth
-        disableEscapeKeyDown
-      >
-        <DialogTitle>
-          {fingerprintSuccess ? 'Fingerprint Updated Successfully!' : 'Fingerprint Setup'}
-        </DialogTitle>
-        <DialogContent sx={{ textAlign: 'center', py: 3 }}>
-          {fingerprintSuccess ? (
-            <>
-              <Box component="img" src="/success.png" alt="Setup Fingerprint" sx={{ width: 60, height: 'auto', margin: 1 }} />
-              <Typography variant="h6" color="success.main" gutterBottom>
-                Fingerprint Updated Successfully!
-              </Typography>
-              <Typography color="text.secondary">
-                User fingerprint has been registered successfully.
-              </Typography>
-            </>
-          ) : (
-            <>
-              <Box component="img" src="/fingerprint.svg" alt="Setup Fingerprint" sx={{ width: 60, height: 'auto', margin: 1 }} />
-              <Typography variant="h6" gutterBottom>
-                Continue fingerprint setup on IoT device
-              </Typography>
-              <Typography color="text.secondary">
-                Please follow the instructions on your IoT device to complete the fingerprint registration.
-              </Typography>
-              <Typography color="red">
-                You are safe to dismiss this popup and check back later for fingerprint status in User Management.
-              </Typography>
-              <CircularProgress size={40} sx={{ mt: 2 }} />
-              <Box sx={{ mt: 3 }}>
-                <Button
-                  variant="outlined"
-                  onClick={handleDismiss}
-                  disabled={!showDismissButton}
-                  sx={{ minWidth: 120 }}
-                >
-                  Dismiss
-                </Button>
-              </Box>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Fingerprint Deletion Confirmation Dialog */}
-      <Dialog
-        open={showFingerprintDialog}
-        onClose={handleFingerprintDialogCancel}
-        aria-labelledby="fingerprint-dialog-title"
-        aria-describedby="fingerprint-dialog-description"
-      >
-        <DialogTitle id="fingerprint-dialog-title">
-          Unable to Remove Fingerprint
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="fingerprint-dialog-description">
-            {fingerprintError || 'Unable to remove fingerprint on the device. Do you want to continue deleting this user?'}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleFingerprintDialogCancel} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleFingerprintDialogConfirm} color="error" variant="contained">
-            Yes, Delete User
-          </Button>
-        </DialogActions>
-      </Dialog>
 
     </>
   );
