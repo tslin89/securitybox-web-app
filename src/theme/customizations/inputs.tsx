@@ -473,4 +473,24 @@ export const inputsCustomizations: Components<Theme> = {
       }),
     },
   },
+  MuiSwitch: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        '& .MuiSwitch-thumb': {
+          backgroundColor: theme.palette.mode === 'light' ? gray[100] : gray[300],
+          border: `1px solid ${theme.palette.mode === 'light' ? gray[300] : gray[500]}`,
+        },
+        '& .MuiSwitch-track': {
+          backgroundColor: theme.palette.mode === 'light' ? gray[200] : gray[600],
+        },
+        '&.Mui-checked .MuiSwitch-thumb': {
+          backgroundColor: theme.palette.primary.main,
+          border: 'none',
+        },
+        '&.Mui-checked .MuiSwitch-track': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.5),
+        },
+      }),
+    },
+  },
 };

@@ -41,7 +41,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     password: '',
     confirmPassword: '',
     userType: 2,
-    isEnabled: true
+    isEnabled: true,
+    fingerprintEnabled: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -132,7 +133,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
         phoneNo: formData.phoneNo || undefined,
         password: formData.password,
         userType: formData.userType,
-        isEnabled: formData.isEnabled
+        isEnabled: formData.isEnabled,
+        fingerprintEnabled: formData.fingerprintEnabled
       });
 
       onSuccess?.(userID);
@@ -268,10 +270,11 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
 
 
               <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr' },
-                gap: 2,
-                mb: 2
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+                gap: 2
               }}>
                 <FormControlLabel
                   control={
@@ -282,6 +285,18 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                     />
                   }
                   label="User Enabled"
+                  sx={{ margin: 0 }}
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.fingerprintEnabled}
+                      onChange={() => handleToggleChange('fingerprintEnabled')}
+                      color="primary"
+                    />
+                  }
+                  label="Fingerprint Enabled"
+                  sx={{ margin: 0 }}
                 />
               </Box>
 

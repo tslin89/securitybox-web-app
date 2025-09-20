@@ -4,14 +4,9 @@ import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import Link from '@mui/material/Link';
-import { Link as RouterLink } from 'react-router-dom';
-import Button from '@mui/material/Button';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Alert from '@mui/material/Alert';
-import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
 import { ensurePushSubscribed } from '../services/api';
 import EventSettings from '../components/EventSettings';
@@ -70,7 +65,7 @@ export default function Settings() {
             Settings
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage your Winter Security Box preferences.
+            Manage your Winter Security Account preferences.
           </Typography>
         </Stack>
 
