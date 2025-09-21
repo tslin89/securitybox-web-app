@@ -40,9 +40,9 @@ const Drawer = styled(MuiDrawer)({
 });
 
 function NavList({ items, userType }: { items: typeof mainNav; userType?: number }) {
-  // Filter items based on userType - only show Transactions for userType 1
+  // Filter items based on userType - only show Users and Transactions for userType 1 (admin)
   const filteredItems = items.filter(item => {
-    if (item.label === 'Transactions') {
+    if (item.label === 'Users') {
       return userType === 1;
     }
     return true; // Show all other items

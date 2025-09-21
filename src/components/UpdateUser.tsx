@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTheme } from '@mui/material/styles';
+import { useAuth } from '../contexts/AuthContext';
 
 // Mock API functions - replace with actual imports
 // const getUser = async (userId: number) => {
@@ -56,9 +57,11 @@ interface UpdateUserProps {
   userId: number;
   onSuccess?: () => void;
   onCancel?: () => void;
+  isProfileEdit?: boolean; // New prop to indicate if this is profile editing
 }
 
-const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) => {
+const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, isProfileEdit = false }) => {
+  const user = useAuth();
   const theme = useTheme();
   const [formData, setFormData] = useState({
     userName: '',
@@ -78,7 +81,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
   const [error, setError] = useState<string | null>(null);
 
   // Check if current user is trying to delete themselves
-  const isCurrentUser = false; // Simplified since we removed currentUser context
+  const isCurrentUser = userId === user?.user?.userID; // Simplified since we removed currentUser context
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
@@ -379,39 +382,42 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel }) 
               </TextField>
 
 
-              <Box sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2,
-                gap: 2
-              }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isEnabled}
-                      onChange={() => handleToggleChange('isEnabled')}
-                      color="primary"
-                    />
-                  }
-                  label="User Enabled"
-                  sx={{ margin: 0 }}
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.fingerprintEnabled}
-                      onChange={() => handleToggleChange('fingerprintEnabled')}
-                      color="primary"
-                    />
-                  }
-                  label="Fingerprint Enabled"
-                  sx={{ margin: 0 }}
-                />
-              </Box>
+              {/* Only show toggles if not in profile edit mode */}
+              {!isProfileEdit && (
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                  gap: 2
+                }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.isEnabled}
+                        onChange={() => handleToggleChange('isEnabled')}
+                        color="primary"
+                      />
+                    }
+                    label="User Enabled"
+                    sx={{ margin: 0 }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formData.fingerprintEnabled}
+                        onChange={() => handleToggleChange('fingerprintEnabled')}
+                        color="primary"
+                      />
+                    }
+                    label="Fingerprint Enabled"
+                    sx={{ margin: 0 }}
+                  />
+                </Box>
+              )}
 
               <Stack direction="row" spacing={2} justifyContent="space-between" sx={{ mt: 3, mb: 3 }}>
-                {!isCurrentUser && (
+                {!isCurrentUser && !isProfileEdit && (
                   <Button
                     variant="contained"
                     color="error"
