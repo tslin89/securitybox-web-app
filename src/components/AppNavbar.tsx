@@ -7,17 +7,15 @@ import MuiToolbar from '@mui/material/Toolbar';
 import { tabsClasses } from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
-import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import SideMenuMobile from './SideMenuMobile';
 import MenuButton from './MenuButton';
 import ColorModeIconDropdown from '.././theme/ColorModeIconDropdown';
-import Badge from '@mui/material/Badge';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import { useAlerts } from '../alerts/AlertsProvider';
 import { useSignalR } from '../contexts/SignalRContext';
 import { NavLink, useNavigate } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 
 const Toolbar = styled(MuiToolbar)({
   width: '100%',
@@ -38,7 +36,6 @@ const Toolbar = styled(MuiToolbar)({
 export default function AppNavbar() {
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
-  const { alerts } = useAlerts();
   const { status, lastError, forceReconnect } = useSignalR() as any;
   const go = (path: string) => () => { navigate(path); };
 
@@ -120,13 +117,7 @@ export default function AppNavbar() {
             </Tooltip>
 
             {/* Alert Notifications */}
-            <Tooltip title={`${alerts.length} alert${alerts.length !== 1 ? 's' : ''}`}>
-              <IconButton size="small" color="inherit" aria-label="notifications">
-                <Badge badgeContent={alerts.length} color="error" overlap="circular">
-                  <NotificationsRoundedIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+            <NotificationBell size="small" />
 
             {/* Theme Switcher */}
             <ColorModeIconDropdown />
