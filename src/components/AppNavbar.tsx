@@ -17,6 +17,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { useAlerts } from '../alerts/AlertsProvider';
 import { useSignalR } from '../contexts/SignalRContext';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 const Toolbar = styled(MuiToolbar)({
   width: '100%',
@@ -35,9 +36,11 @@ const Toolbar = styled(MuiToolbar)({
 });
 
 export default function AppNavbar() {
+  const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
   const { alerts } = useAlerts();
   const { status, lastError, forceReconnect } = useSignalR() as any;
+  const go = (path: string) => () => { navigate(path); };
 
   const toggleDrawer = (newOpen: boolean) => () => {
     setOpen(newOpen);
@@ -100,21 +103,22 @@ export default function AppNavbar() {
           <Stack
             direction="row"
             spacing={1}
-            sx={{ justifyContent: 'center', mr: 'auto' }}
+            sx={{ justifyContent: 'center', mr: 'auto', cursor: 'pointer' }}
+            onClick={go('/dashboard')}
           >
             <CustomIcon />
             <Typography variant="h4" component="h1" sx={{ color: 'text.primary', pl: 1, fontSize: { xs: '1rem', sm: '1.5rem' } }}>
               Winter Security
             </Typography>
           </Stack>
-          
+
           {/* Right side controls */}
           <Stack direction="row" alignItems="center" spacing={1}>
             {/* Connection Status */}
             <Tooltip title={status === 'connected' ? 'Connection is active' : 'Click to reconnect'}>
               {getConnectionStatusChip()}
             </Tooltip>
-            
+
             {/* Alert Notifications */}
             <Tooltip title={`${alerts.length} alert${alerts.length !== 1 ? 's' : ''}`}>
               <IconButton size="small" color="inherit" aria-label="notifications">
@@ -123,10 +127,10 @@ export default function AppNavbar() {
                 </Badge>
               </IconButton>
             </Tooltip>
-            
+
             {/* Theme Switcher */}
             <ColorModeIconDropdown />
-            
+
             {/* Menu Button */}
             <MenuButton aria-label="menu" onClick={toggleDrawer(true)}>
               <MenuRoundedIcon />

@@ -1,10 +1,10 @@
 import SHA256 from "crypto-js/sha256";
 var AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.net/api';
 
-if (window.location.hostname === 'localhost') {
-  AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
-  // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
-}
+// if (window.location.hostname === 'localhost') {
+//   AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
+//   // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
+// }
 
 // interface Transaction {
 //   id: number;

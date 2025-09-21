@@ -98,7 +98,7 @@ export default function SideMenu() {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* BRAND / PROJECT SWITCHER AREA (optional, keep template content here) */}
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', cursor: 'pointer' }} onClick={go('/dashboard')}>
           <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 36, height: 'auto', margin: 1 }} />
           <Box>
             <Typography sx={{ fontWeight: 600 }}>

@@ -28,6 +28,7 @@ const labels: Record<string, string> = {
   profile: 'Profile',
   account: 'My account',
   'add-account': 'Add another account',
+  boxlist: 'Box Status & Control',
 };
 
 export default function SecondaryBar() {
