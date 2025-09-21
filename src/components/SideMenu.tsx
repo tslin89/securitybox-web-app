@@ -40,9 +40,9 @@ const Drawer = styled(MuiDrawer)({
 });
 
 function NavList({ items, userType }: { items: typeof mainNav; userType?: number }) {
-  // Filter items based on userType - only show Transactions for userType 1
+  // Filter items based on userType - only show Users and Transactions for userType 1 (admin)
   const filteredItems = items.filter(item => {
-    if (item.label === 'Transactions') {
+    if (item.label === 'Users') {
       return userType === 1;
     }
     return true; // Show all other items
@@ -98,7 +98,7 @@ export default function SideMenu() {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* BRAND / PROJECT SWITCHER AREA (optional, keep template content here) */}
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', cursor: 'pointer' }} onClick={go('/dashboard')}>
           <Box component="img" src="/logo512.png" alt="Winter Security Box" sx={{ width: 36, height: 'auto', margin: 1 }} />
           <Box>
             <Typography sx={{ fontWeight: 600 }}>

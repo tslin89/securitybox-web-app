@@ -9,11 +9,8 @@ import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SignalRStatus from './SignalRStatus';
-import { IconButton } from '@mui/material';
-import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
-import Badge from '@mui/material/Badge';
 import ColorModeIconDropdown from '../theme/ColorModeIconDropdown';
-import { useAlerts } from '../alerts/AlertsProvider';
+import NotificationBell from './NotificationBell';
 
 const APP_LABEL = 'Home';   // ← your brand text
 const HOME_PATH = '/dashboard';               // ← where "home" should go
@@ -28,6 +25,7 @@ const labels: Record<string, string> = {
   profile: 'Profile',
   account: 'My account',
   'add-account': 'Add another account',
+  boxlist: 'Box Status & Control',
 };
 
 export default function SecondaryBar() {
@@ -40,7 +38,6 @@ export default function SecondaryBar() {
   const pageTitle =
     lastSeg ? (labels[lastSeg] ?? lastSeg.replace(/-/g, ' ')) : 'Dashboard';
 
-  const { alerts } = useAlerts?.() ?? { alerts: [] };
 
   return (
     <Box
@@ -86,11 +83,7 @@ export default function SecondaryBar() {
           {/* Right side: SignalR status, Notifications, Theme toggle */}
           <Stack direction="row" alignItems="center" spacing={1}>
             <SignalRStatus />
-            <IconButton size="small" color="inherit" aria-label="notifications">
-              <Badge badgeContent={alerts?.length ?? 0} color="error" overlap="circular">
-                <NotificationsRoundedIcon />
-              </Badge>
-            </IconButton>
+            <NotificationBell size="small" />
             <ColorModeIconDropdown />
           </Stack>
         </Stack>

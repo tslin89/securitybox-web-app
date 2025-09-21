@@ -13,6 +13,7 @@ import Account from '../pages/Account';
 import AddAccount from '../pages/AddAccount';
 import { useAuth } from '../contexts/AuthContext';
 import BoxesList from '../pages/BoxesList';
+import Logout from '../pages/Logout';
 
 /** Show children only when NOT authed. If authed, go to dashboard. */
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
@@ -36,6 +37,9 @@ export default function AppRoutes() {
         {/* Public login at BOTH / and /login */}
         <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
         <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+        
+        {/* Logout route - accessible without authentication */}
+        <Route path="/logout" element={<Logout />} />
 
         {/* Protected area wrapped in the shell */}
         <Route element={<ProtectedRoute />}>

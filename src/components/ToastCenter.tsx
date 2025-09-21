@@ -6,15 +6,21 @@ import { formatTime } from '../utils/dateFormatter';
 // import { EVENT_SETS } from '../constants/events';
 
 export default function ToastCenter() {
-  const { alerts, dismiss } = useAlerts();
+  const { alerts, dismiss, dismissToast, dismissedToasts } = useAlerts();
   const toasts = alerts.filter(a => !a.persistent);
   const persistentAlerts = alerts.filter(a => a.persistent);
   
-  // Get the last 3 toasts (non-persistent)
-  const lastThreeToasts = toasts.slice(-3);
+  // Get the last 3 toasts (non-persistent) that haven't been dismissed from toast display
+  const lastThreeToasts = toasts
+    .filter(toast => !dismissedToasts.has(toast.id))
+    .slice(-3);
+
+  // Get persistent alerts that haven't been dismissed from toast display
+  const visiblePersistentAlerts = persistentAlerts
+    .filter(alert => !dismissedToasts.has(alert.id));
 
   // If there's no toast to show, render nothing
-  if (lastThreeToasts.length === 0 && persistentAlerts.length === 0) return null;
+  if (lastThreeToasts.length === 0 && visiblePersistentAlerts.length === 0) return null;
 
   // Check if an event code is an incident (should not auto-dismiss)
   const isIncident = (message: string): boolean => {
@@ -31,8 +37,8 @@ export default function ToastCenter() {
     if (isIncident(message)) {
       return null; // No auto-dismiss
     }
-    // All other events auto-dismiss after 5 seconds
-    return 5000;
+    // All other events auto-dismiss after 10 seconds
+    return 10000;
   };
 
   return (
@@ -51,7 +57,7 @@ export default function ToastCenter() {
         const severity: AlertColor = (toast.severity as AlertColor) ?? 'info';
         const autoHideDuration = getAutoHideDuration(toast.message);
         
-        const handleClose = () => dismiss(toast.id);
+        const handleClose = () => dismissToast(toast.id);
 
         return (
           <Snackbar
@@ -99,10 +105,10 @@ export default function ToastCenter() {
       })}
 
       {/* Persistent alerts (no auto-dismiss, error styling) */}
-      {persistentAlerts.map((alert) => {
+      {visiblePersistentAlerts.map((alert) => {
         const severity: AlertColor = (alert.severity as AlertColor) ?? 'error';
         
-        const handleClose = () => dismiss(alert.id);
+        const handleClose = () => dismissToast(alert.id);
 
         return (
           <Snackbar
