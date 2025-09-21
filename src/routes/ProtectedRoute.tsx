@@ -20,7 +20,7 @@ const ProtectedRoute: React.FC = () => {
 
   return isAuthenticated ?
     <Outlet /> :
-    <Navigate to="/logout" replace state={{ from: loc }}/>;
+    <Navigate to="/login" replace state={{ from: loc }}/>;
 };
 
 export default ProtectedRoute;

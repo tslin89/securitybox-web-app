@@ -192,14 +192,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setBoxList([]);
     setEventCodes([]);
     
-    // Clear localStorage
+    // Clear localStorage - including all auth and notification data
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
     localStorage.removeItem('authBoxList');
     localStorage.removeItem('authEventCodes');
     localStorage.removeItem('tokenExpiry');
+    localStorage.removeItem('securitybox_notifications'); // Clear notification data
     
-    console.log('User logged out');
+    console.log('User logged out - all session data cleared');
   };
 
   const checkAuthStatus = (): boolean => {
