@@ -68,15 +68,15 @@ export default function NotificationBell({ size = 'small' }: NotificationBellPro
     }
   };
 
-  const getSeverityIcon = (severity?: string) => {
-    switch (severity) {
-      case 'error': return '🔴';
-      case 'warning': return '🟡';
-      case 'success': return '🟢';
-      case 'info': return '🔵';
-      default: return '⚪';
-    }
-  };
+  // const getSeverityIcon = (severity?: string) => {
+  //   switch (severity) {
+  //     case 'error': return '🔴';
+  //     case 'warning': return '🟡';
+  //     case 'success': return '🟢';
+  //     case 'info': return '🔵';
+  //     default: return '⚪';
+  //   }
+  // };
 
   // Sort alerts by timestamp (newest first)
   const sortedAlerts = [...alerts].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -93,9 +93,9 @@ export default function NotificationBell({ size = 'small' }: NotificationBellPro
             position: 'relative',
           }}
         >
-          <Badge 
-            badgeContent={unreadCount} 
-            color="error" 
+          <Badge
+            badgeContent={unreadCount}
+            color="error"
             overlap="circular"
             invisible={unreadCount === 0}
           >
@@ -131,10 +131,10 @@ export default function NotificationBell({ size = 'small' }: NotificationBellPro
               <Typography variant="h6" component="div">
                 Notifications
                 {unreadCount > 0 && (
-                  <Chip 
-                    label={unreadCount} 
-                    size="small" 
-                    color="primary" 
+                  <Chip
+                    label={unreadCount}
+                    size="small"
+                    color="primary"
                     sx={{ ml: 1 }}
                   />
                 )}
@@ -160,6 +160,13 @@ export default function NotificationBell({ size = 'small' }: NotificationBellPro
                     Dismiss All
                   </Button>
                 )}
+                {/* <ListIconButton
+                  size="small"
+                  
+                  sx={{ p: 0.5 }}
+                >
+                  <SettingsIcon fontSize="small" />
+                </ListIconButton> */}
               </Stack>
             </Stack>
           </Box>
@@ -191,9 +198,9 @@ export default function NotificationBell({ size = 'small' }: NotificationBellPro
                         primary={
                           <Box>
                             <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                              <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
+                              {/* <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
                                 {getSeverityIcon(alert.severity)}
-                              </Typography>
+                              </Typography> */}
                               <Chip
                                 label={alert.severity || 'info'}
                                 size="small"
@@ -207,7 +214,7 @@ export default function NotificationBell({ size = 'small' }: NotificationBellPro
                                     width: 8,
                                     height: 8,
                                     borderRadius: '50%',
-                                    backgroundColor: 'primary.main',
+                                    backgroundColor: 'orange', // 'primary.main',
                                   }}
                                 />
                               )}
