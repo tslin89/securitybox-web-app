@@ -120,7 +120,7 @@ export default function Profile() {
                 <PersonIcon color="action" />
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Username
+                    Name
                   </Typography>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
                     {user.userName}
