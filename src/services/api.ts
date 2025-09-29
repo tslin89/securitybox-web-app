@@ -1,10 +1,10 @@
 import SHA256 from "crypto-js/sha256";
 var AZURE_FUNCTIONS_BASE_URL = 'https://securityboxwebfunctions.azurewebsites.net/api';
 
-// if (window.location.hostname === 'localhost') {
-//   AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
-//   // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
-// }
+if (window.location.hostname === 'localhost') {
+  AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7107/api';
+  // AZURE_FUNCTIONS_BASE_URL = 'http://localhost:7071/api';
+}
 
 // interface Transaction {
 //   id: number;
@@ -357,6 +357,7 @@ export interface BoxData {
   boxPosition: number | null;
   transactionID: string | null;
   receivedTime: string | null;
+  securityStatus: number | null; // 1=enabled, 0=disabled
 }
 
 export interface BoxStatusResponse {
@@ -449,9 +450,19 @@ export async function startFingerprintOnDevice(deviceId: string, userId: number,
   return res.json();
 }
 
-export async function unlockDevice(deviceId: string, userId: number, boxId: number) {
+export async function disableSecurity(deviceId: string, userId: number, boxId: number) {
 
   const res = await invokeDeviceSignal(deviceId, userId, "D003", boxId, 0);
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  return res.json();
+}
+
+export async function enableSecurity(deviceId: string, userId: number, boxId: number) {
+
+  const res = await invokeDeviceSignal(deviceId, userId, "D004", boxId, 0);
 
   if (!res.ok) {
     throw new Error(await res.text());

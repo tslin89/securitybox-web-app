@@ -246,7 +246,11 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }, []);
 
     const triggerTransactionUpdate = useCallback(() => {
-        transactionUpdateCallbacks.forEach(callback => callback());
+        console.log('🔄 triggerTransactionUpdate called, notifying', transactionUpdateCallbacks.size, 'callbacks');
+        transactionUpdateCallbacks.forEach(callback => {
+            console.log('🔄 Calling transaction update callback');
+            callback();
+        });
     }, [transactionUpdateCallbacks]);
 
     // Use a ref to avoid dependency issues
@@ -531,6 +535,13 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                     const isIncident = isIncidentEvent(temp.EventCode, connectionEventCodes);
                     
                     addAlert(fullMessage, msgType, isIncident);
+                    
+                    // Trigger transaction update callbacks for box status changes
+                    console.log("📢 Triggering transaction update callbacks for newAlert");
+                    setTimeout(() => {
+                        console.log("📢 Executing delayed transaction update trigger for newAlert");
+                        triggerTransactionUpdateRef.current();
+                    }, 500); // Shorter delay for alerts
                 });
 
                 newConnection.on("transactionUpdate", (data: any) => {
@@ -538,7 +549,9 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                     lastHeartbeat.current = new Date(); // Update heartbeat
                     addAlert("New transaction recorded", 'info', false);
 
+                    console.log("📊 Scheduling transaction update trigger in 1 second...");
                     setTimeout(() => {
+                        console.log("📊 Executing delayed transaction update trigger");
                         triggerTransactionUpdateRef.current();
                     }, 1000);
                 });

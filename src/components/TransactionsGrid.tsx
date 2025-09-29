@@ -27,6 +27,7 @@ export type TxRow = {
   fingerprintNum: number;
   totalWeight: number;
   boxPosition: number;
+  securityStatus: number;
 };
 
 export interface TransactionsGridRef {
@@ -141,6 +142,23 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
           );
         },
       },
+      {
+        field: 'securityStatus',
+        headerName: 'Security',
+        minWidth: 120,
+        flex: 0.6,
+        renderCell: (params) => {
+          const open = Number(params.value) === 1;
+          return (
+            <Chip
+              size="small"
+              label={open ? 'Enabled' : 'Disabled'}
+              color={open ? 'success' : 'error'}
+              variant="outlined"
+            />
+          );
+        },
+      },
       { field: 'fingerprintNum', headerName: 'Fingerprint ID', minWidth: 100, flex: 0.6, type: 'number' },
       {
         field: 'totalWeight',
@@ -207,12 +225,12 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   }, [paginationModel.page, paginationModel.pageSize, user?.userID]);
 
   // refresh on SignalR events
-  useEffect(() => {
-    const handler = () => fetchPage();
-    onTransactionUpdate(handler);
-    return () => offTransactionUpdate(handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   const handler = () => fetchPage();
+  //   onTransactionUpdate(handler);
+  //   return () => offTransactionUpdate(handler);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   return (
     <Box sx={{
