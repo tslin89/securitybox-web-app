@@ -11,9 +11,19 @@ import {
   FormControlLabel,
   Alert,
   CircularProgress,
-  Stack
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  OutlinedInput,
+  FilledInput,
+  Checkbox,
+  ListItemText
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useAuth } from '../contexts/AuthContext';
 
 // Mock API function - replace with actual import
 // const createUser = async (userData: any) => {
@@ -34,6 +44,7 @@ interface AddUserProps {
 
 const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
   const theme = useTheme();
+  const { boxList } = useAuth();
   const [formData, setFormData] = useState({
     userName: '',
     email: '',
@@ -42,7 +53,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     confirmPassword: '',
     userType: 2,
     isEnabled: true,
-    fingerprintEnabled: false
+    fingerprintEnabled: false,
+    selectedBoxes: [] as number[]
   });
 
   const [loading, setLoading] = useState(false);
@@ -89,6 +101,31 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     },
   };
 
+  const multiSelectStyles = {
+    // Let the theme handle the styling, just ensure consistent appearance
+    '& .MuiFilledInput-root': {
+      borderRadius: '8px 8px 8px 8px', // Add bottom border radius
+      '&:before': {
+        borderBottom: 'none',
+      },
+      '&:after': {
+        borderBottom: 'none',
+      },
+      '&:hover:not(.Mui-disabled):before': {
+        borderBottom: 'none',
+      },
+    },
+    '& .MuiFilledInput-underline:before': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:after': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:hover:not(.Mui-disabled):before': {
+      borderBottom: 'none',
+    },
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData(prev => ({
@@ -102,6 +139,14 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
     setFormData(prev => ({
       ...prev,
       [field]: !prev[field as keyof typeof prev]
+    }));
+  };
+
+  const handleBoxSelectionChange = (event: any) => {
+    const value = event.target.value;
+    setFormData(prev => ({
+      ...prev,
+      selectedBoxes: typeof value === 'string' ? value.split(',').map(Number) : value
     }));
   };
 
@@ -134,7 +179,8 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
         password: formData.password,
         userType: formData.userType,
         isEnabled: formData.isEnabled,
-        fingerprintEnabled: formData.fingerprintEnabled
+        fingerprintEnabled: formData.fingerprintEnabled,
+        boxIDs: formData.selectedBoxes.length > 0 ? formData.selectedBoxes : undefined
       });
 
       onSuccess?.(userID);
@@ -266,6 +312,49 @@ const AddUser: React.FC<AddUserProps> = ({ onSuccess, onCancel }) => {
                   <option value={1}>Admin</option>
                   <option value={2}>User</option>
                 </TextField>
+              </Box>
+
+              <Box sx={{ mb: 2 }}>
+                <FormControl fullWidth variant="filled" sx={multiSelectStyles}>
+                  <InputLabel id="box-selection-label">Select Boxes (Optional)</InputLabel>
+                  <Select
+                    labelId="box-selection-label"
+                    multiple
+                    value={formData.selectedBoxes}
+                    onChange={handleBoxSelectionChange}
+                    input={<FilledInput />}
+                    renderValue={(selected) => (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: 0.5, 
+                        minHeight: '20px',
+                        alignItems: 'center',
+                        paddingTop: selected.length > 0 ? '8px' : '0' // Add padding when items are selected
+                      }}>
+                        {selected.map((value) => {
+                          const box = boxList.find(b => b.boxID === value);
+                          return (
+                            <Chip 
+                              key={value} 
+                              label={box ? box.description : `Box ${value}`}
+                              size="small"
+                            />
+                          );
+                        })}
+                      </Box>
+                    )}
+                  >
+                    {boxList.map((box) => (
+                      <MenuItem key={box.boxID} value={box.boxID}>
+                        <Checkbox
+                          checked={formData.selectedBoxes.indexOf(box.boxID) > -1}
+                        />
+                        <ListItemText primary={box.description} />
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
 
 
