@@ -195,6 +195,13 @@ export async function getDashboardOverview(
 // users
 // Add these types and methods to your api.ts file
 
+export interface UserBox {
+  userID: number;
+  boxID: number;
+  userRole: number; // 0=user, 1=owner
+  fingerprintNum?: number | null;
+}
+
 export interface User {
   userID: number;
   userName: string;
@@ -204,6 +211,7 @@ export interface User {
   fingerprintNum?: number;
   fingerprintEnabled?: boolean;
   isEnabled?: boolean;
+  userBoxes?: UserBox[];
 }
 
 export interface CreateUserRequest {
@@ -213,6 +221,7 @@ export interface CreateUserRequest {
   password: string;
   userType: number;
   boxID?: number;
+  boxIDs?: number[]; // Array of selected box IDs
   fingerprintEnabled?: boolean;
   isEnabled?: boolean;
 }
@@ -225,6 +234,7 @@ export interface UpdateUserRequest {
   password?: string;
   userType: number;
   boxID: number;
+  boxIDs?: number[]; // Array of selected box IDs
   fingerprintEnabled?: boolean;
   isEnabled?: boolean;
 }
@@ -358,6 +368,7 @@ export interface BoxData {
   transactionID: string | null;
   receivedTime: string | null;
   securityStatus: number | null; // 1=enabled, 0=disabled
+  userRole: number | null; // 0=user, 1=owner
 }
 
 export interface BoxStatusResponse {

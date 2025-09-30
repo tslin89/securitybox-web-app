@@ -12,7 +12,16 @@ import {
   FormControlLabel,
   Alert,
   CircularProgress,
-  Stack
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  OutlinedInput,
+  FilledInput,
+  Checkbox,
+  ListItemText
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTheme } from '@mui/material/styles';
@@ -61,7 +70,7 @@ interface UpdateUserProps {
 }
 
 const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, isProfileEdit = false }) => {
-  const user = useAuth();
+  const { user, boxList } = useAuth();
   const theme = useTheme();
   const [formData, setFormData] = useState({
     userName: '',
@@ -71,7 +80,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
     confirmPassword: '',
     userType: 2,
     isEnabled: true,
-    fingerprintEnabled: false
+    fingerprintEnabled: false,
+    selectedBoxes: [] as number[]
   });
 
   const [originalUser, setOriginalUser] = useState<User | null>(null);
@@ -79,9 +89,10 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
   const [loading, setLoading] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ownedBoxes, setOwnedBoxes] = useState<number[]>([]); // Boxes where userRole = 1 (owner)
 
   // Check if current user is trying to delete themselves
-  const isCurrentUser = userId === user?.user?.userID; // Simplified since we removed currentUser context
+  const isCurrentUser = userId === user?.userID;
 
   const textFieldStyles = {
     '& .MuiFilledInput-root': {
@@ -124,11 +135,42 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
     },
   };
 
+  const multiSelectStyles = {
+    // Let the theme handle the styling, just ensure consistent appearance
+    '& .MuiFilledInput-root': {
+      borderRadius: '8px 8px 8px 8px', // Add bottom border radius
+      '&:before': {
+        borderBottom: 'none',
+      },
+      '&:after': {
+        borderBottom: 'none',
+      },
+      '&:hover:not(.Mui-disabled):before': {
+        borderBottom: 'none',
+      },
+    },
+    '& .MuiFilledInput-underline:before': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:after': {
+      borderBottom: 'none',
+    },
+    '& .MuiFilledInput-underline:hover:not(.Mui-disabled):before': {
+      borderBottom: 'none',
+    },
+  };
+
   const loadUser = useCallback(async () => {
     try {
       setLoadingUser(true);
       const user = await getUser(userId);
       setOriginalUser(user);
+
+      // Extract owned boxes (userRole = 1)
+      const ownedBoxIds = user.userBoxes 
+        ? user.userBoxes.filter(ub => ub.userRole === 1).map(ub => ub.boxID)
+        : [];
+      setOwnedBoxes(ownedBoxIds);
 
       setFormData({
         userName: user.userName,
@@ -138,7 +180,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
         confirmPassword: '',
         userType: user.userType,
         isEnabled: user.isEnabled ?? true,
-        fingerprintEnabled: user.fingerprintEnabled ?? false
+        fingerprintEnabled: user.fingerprintEnabled ?? false,
+        selectedBoxes: user.userBoxes ? user.userBoxes.map(ub => ub.boxID) : []
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user');
@@ -165,6 +208,19 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
     setFormData(prev => ({
       ...prev,
       [field]: !prev[field as keyof typeof prev]
+    }));
+  };
+
+  const handleBoxSelectionChange = (event: any) => {
+    const value = event.target.value;
+    const newSelectedBoxes = typeof value === 'string' ? value.split(',').map(Number) : value;
+    
+    // Ensure owned boxes are always included (cannot be removed)
+    const finalSelectedBoxes = [...new Set([...newSelectedBoxes, ...ownedBoxes])];
+    
+    setFormData(prev => ({
+      ...prev,
+      selectedBoxes: finalSelectedBoxes
     }));
   };
 
@@ -201,7 +257,8 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
         phoneNo: formData.phoneNo || undefined,
         userType: formData.userType,
         isEnabled: formData.isEnabled,
-        fingerprintEnabled: formData.fingerprintEnabled
+        fingerprintEnabled: formData.fingerprintEnabled,
+        boxIDs: formData.selectedBoxes.length > 0 ? formData.selectedBoxes : undefined
       };
 
       if (changePassword) {
@@ -380,6 +437,74 @@ const UpdateUser: React.FC<UpdateUserProps> = ({ userId, onSuccess, onCancel, is
                 <option value={1}>Admin</option>
                 <option value={2}>User</option>
               </TextField>
+
+              <Box sx={{ mb: 2 }}>
+                <FormControl fullWidth variant="filled" sx={multiSelectStyles}>
+                  <InputLabel id="box-selection-label">Select Boxes</InputLabel>
+                  <Select
+                    labelId="box-selection-label"
+                    multiple
+                    value={formData.selectedBoxes}
+                    onChange={handleBoxSelectionChange}
+                    input={<FilledInput />}
+                    renderValue={(selected) => (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        gap: 0.5, 
+                        minHeight: '20px',
+                        alignItems: 'center',
+                        paddingTop: selected.length > 0 ? '8px' : '0' // Add padding when items are selected
+                      }}>
+                        {selected.map((value) => {
+                          const box = boxList.find(b => b.boxID === value);
+                          const isOwned = ownedBoxes.includes(value);
+                          return (
+                            <Chip 
+                              key={value} 
+                              label={box ? box.description : `Box ${value}`}
+                              size="small"
+                              color={isOwned ? "primary" : "default"}
+                              variant={isOwned ? "filled" : "outlined"}
+                              // onDelete={isOwned ? undefined : () => {
+                              //   const newSelection = formData.selectedBoxes.filter(id => id !== value);
+                              //   setFormData(prev => ({ ...prev, selectedBoxes: newSelection }));
+                              // }}
+                            />
+                          );
+                        })}
+                      </Box>
+                    )}
+                  >
+                    {boxList.map((box) => {
+                      const isOwned = ownedBoxes.includes(box.boxID);
+                      return (
+                        <MenuItem
+                          key={box.boxID}
+                          value={box.boxID}
+                          disabled={isOwned} // Disable owned boxes in dropdown
+                        >
+                          <Checkbox
+                            checked={formData.selectedBoxes.indexOf(box.boxID) > -1}
+                            disabled={isOwned}
+                          />
+                          <ListItemText primary={box.description} />
+                          {isOwned && (
+                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                              (Owner - Cannot Remove)
+                            </Typography>
+                          )}
+                        </MenuItem>
+                      );
+                    })}
+                  </Select>
+                </FormControl>
+                {ownedBoxes.length > 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    Blue chips indicate boxes you own and cannot be removed.
+                  </Typography>
+                )}
+              </Box>
 
 
               {/* Only show toggles if not in profile edit mode */}
