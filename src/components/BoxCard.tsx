@@ -163,7 +163,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
           flexDirection: 'column',
           backgroundColor: theme.palette.background.paper,
           border: box.securityStatus === 0 
-            ? `2px solid ${theme.palette.error.main}` 
+            ? `1px solid ${theme.palette.error.main}` 
             : `1px solid ${theme.palette.divider}`,
           boxShadow: box.securityStatus === 0 
             ? `0 0 0 1px ${theme.palette.error.main}` 
