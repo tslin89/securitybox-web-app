@@ -11,6 +11,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import SignalRStatus from './SignalRStatus';
 import ColorModeIconDropdown from '../theme/ColorModeIconDropdown';
 import NotificationBell from './NotificationBell';
+import { useSidebar } from '../contexts/SidebarContext';
 
 const APP_LABEL = 'Home';   // ← your brand text
 const HOME_PATH = '/dashboard';               // ← where "home" should go
@@ -32,26 +33,33 @@ export default function SecondaryBar() {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const { pathname } = useLocation();
+  const { collapsed } = useSidebar();
 
   const segments = pathname.split('/').filter(Boolean);
   const lastSeg = segments.length ? segments[segments.length - 1] : undefined;
   const pageTitle =
     lastSeg ? (labels[lastSeg] ?? lastSeg.replace(/-/g, ' ')) : 'Dashboard';
 
+  // Calculate dynamic left position based on sidebar state
+  const sidebarWidth = collapsed ? 64 : 240;
 
   return (
     <Box
       sx={{
         position: 'fixed',
         top: 0,
-        left: { xs: 0, md: 240 }, // Account for sidebar width on desktop
+        left: { xs: 0, md: sidebarWidth }, // Dynamic sidebar width
         right: 0,
         zIndex: (t) => t.zIndex.appBar - 1,
         borderBottom: 1,
         borderColor: 'divider',
         bgcolor: 'background.paper',
         paddingTop: 1,
-        paddingBottom: 1
+        paddingBottom: 1,
+        transition: theme.transitions.create('left', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
       }}
     >
       <Toolbar variant="dense" sx={{ minHeight: 44 }}>
