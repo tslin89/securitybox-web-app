@@ -9,6 +9,7 @@ import AppNavbar from '../components/AppNavbar';
 import SideMenu from '../components/SideMenu';
 // import SideMenuMobile from '../components/SideMenuMobile';
 import ToastCenter from '../components/ToastCenter';
+import { SidebarProvider } from '../contexts/SidebarContext';
 
 // Theme wrapper & X customizations (from the template)
 import AppTheme from '../theme/AppTheme';
@@ -38,28 +39,30 @@ export default function AppShell() {
   return (
     <AppTheme themeComponents={xThemeComponents}>
       <CssBaseline enableColorScheme />
-      <Box sx={{ display: 'flex' }}>
-        <SideMenu />
-        <AppNavbar />
+      <SidebarProvider>
+        <Box sx={{ display: 'flex' }}>
+          <SideMenu />
+          <AppNavbar />
 
-        <Box
-          component="main"
-          sx={(theme) => ({
-            flexGrow: 1,
-            backgroundColor: theme.vars
-              ? `rgba(${theme.vars.palette.background.defaultChannel} / 1)`
-              : alpha(theme.palette.background.default, 1),
-            overflow: 'auto',
-            pt: { xs: 0, md: 7 }, // Add top padding to account for fixed top bar
-          })}
-        >
-          <SecondaryBar />
-          <ToastCenter />
-          <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Outlet />
+          <Box
+            component="main"
+            sx={(theme) => ({
+              flexGrow: 1,
+              backgroundColor: theme.vars
+                ? `rgba(${theme.vars.palette.background.defaultChannel} / 1)`
+                : alpha(theme.palette.background.default, 1),
+              overflow: 'auto',
+              pt: { xs: 0, md: 7 }, // Add top padding to account for fixed top bar
+            })}
+          >
+            <SecondaryBar />
+            <ToastCenter />
+            <Box sx={{ p: { xs: 2, md: 3 } }}>
+              <Outlet />
+            </Box>
           </Box>
         </Box>
-      </Box>
+      </SidebarProvider>
     </AppTheme>
   );
 }
