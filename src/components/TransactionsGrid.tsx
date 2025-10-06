@@ -131,7 +131,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
         minWidth: 120,
         flex: 0.6,
         renderCell: (params) => {
-          const stolen = Number(params.value) === 0;
+          const stolen = Number(params.value) === 1;
           return (
             <Chip
               size="small"
