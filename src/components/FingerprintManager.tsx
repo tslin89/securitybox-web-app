@@ -128,7 +128,7 @@ const FingerprintManager: React.FC<FingerprintManagerProps> = ({
           } catch (err) {
             console.error('Error checking fingerprint status:', err);
           }
-        }, 5000);
+        }, 1000);
 
         setCheckInterval(interval);
 
