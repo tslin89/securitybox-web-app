@@ -139,7 +139,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
 
   const getBoxPositionInfo = () => {
     if (box.boxPosition === null) return { text: 'Unknown', color: 'default' as const };
-    return box.boxPosition === 0
+    return box.boxPosition === 1
       ? { text: 'Stolen', color: 'error' as const }
       : { text: 'In place', color: 'success' as const };
   };

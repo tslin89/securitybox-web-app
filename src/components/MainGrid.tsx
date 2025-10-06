@@ -203,7 +203,7 @@ export default function MainGrid() {
               <BarChart
                 height={280}
                 borderRadius={5}
-                //barLabel={(bar) => `${bar.value}`}
+                // barLabel={(bar) => `${bar.value}`}
                 sx={{ backgroundColor: theme.palette.background.paper }}
                 xAxis={[{ scaleType: 'band', data: xDates }]}
                 series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
