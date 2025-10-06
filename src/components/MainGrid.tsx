@@ -26,7 +26,7 @@ function StatCard({ title, value }: { title: string; value: number | string }) {
   return (
     <Card sx={{ backgroundColor: theme.palette.background.paper }}>
       <CardContent>
-        <Typography variant="overline" color="text.secondary">{title}</Typography>
+        <Typography variant="h6" color="text.secondary">{title}</Typography>
         <Typography variant="h5" sx={{ mt: 0.5 }}>{value}</Typography>
       </CardContent>
     </Card>
@@ -203,6 +203,7 @@ export default function MainGrid() {
               <BarChart
                 height={280}
                 borderRadius={5}
+                //barLabel={(bar) => `${bar.value}`}
                 sx={{ backgroundColor: theme.palette.background.paper }}
                 xAxis={[{ scaleType: 'band', data: xDates }]}
                 series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
@@ -222,8 +223,8 @@ export default function MainGrid() {
                 sx={{ backgroundColor: theme.palette.background.paper }}
                 xAxis={[{ scaleType: 'band', data: xDates }]}
                 series={[
-                  { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc' },
-                  { data: incidentsBoxSeries, label: 'Box stolen (C009)', stack: 'inc' },
+                  { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc', color: theme.palette.warning.main },
+                  { data: incidentsBoxSeries, label: 'Box stolen (C009)', stack: 'inc', color: theme.palette.error.main },
                 ]}
               />
             </CardContent>
@@ -231,7 +232,7 @@ export default function MainGrid() {
         </Grid>
 
         {/* Weight trend */}
-        <Grid size={{ xs: 12, md: 8 }}>
+        <Grid size={{ xs: 12, md: 12 }}>
           <Card sx={{ backgroundColor: theme.palette.background.paper }}>
             <CardContent>
               <Typography variant="subtitle1" sx={{ mb: 1 }}>Average Weight (last {selectedPeriod} days)</Typography>
@@ -264,7 +265,7 @@ export default function MainGrid() {
         </Grid>
 
         {/* Event mix */}
-        <Grid size={{ xs: 12, md: 4 }}>
+        {/* <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ backgroundColor: theme.palette.background.paper }}>
             <CardContent>
               <Typography variant="subtitle1" sx={{ mb: 1 }}>Event mix (last {selectedPeriod} days)</Typography>
@@ -275,7 +276,7 @@ export default function MainGrid() {
               />
             </CardContent>
           </Card>
-        </Grid>
+        </Grid> */}
       </Grid>
     </Box>
   );

@@ -327,7 +327,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         if (!userId) {
             console.error('🔌 Cannot reconnect: User ID not available in context or localStorage');
             setStatus('disconnected');
-            addAlert('Cannot reconnect: User data not available', 'error', false);
+            //addAlert('Cannot reconnect: User data not available', 'error', false);
             return;
         }
 
@@ -386,7 +386,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
         } catch (e: any) {
             setStatus('error');
             setLastError(e?.message ?? 'Reconnect failed');
-            addAlert('SignalR reconnect failed', 'error', false);
+            //addAlert('SignalR reconnect failed', 'error', false);
             isConnectingRef.current = false; // Reset connecting flag
         }
     }, [connection, addAlert, user]);
@@ -406,7 +406,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             // If no heartbeat for 30 seconds and connection thinks it's connected
             if (timeSinceLastHeartbeat > 30000 && connection?.state === HubConnectionState.Connected) {
                 console.warn('🚨 Connection appears stale, forcing reconnect...');
-                addAlert('Connection appears stale, attempting to reconnect...', 'warning', false);
+                //addAlert('Connection appears stale, attempting to reconnect...', 'warning', false);
                 reconnectRef.current();
             }
 
@@ -583,13 +583,13 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                     reconnectAttempts.current++;
                     console.warn(`🔄 SignalR reconnecting (attempt ${reconnectAttempts.current})...`, error);
                     updateConnectionStateRef.current(newConnection);
-                    addAlert(`Connection lost, reconnecting... (attempt ${reconnectAttempts.current})`, 'warning', false);
+                    //addAlert(`Connection lost, reconnecting... (attempt ${reconnectAttempts.current})`, 'warning', false);
                 });
 
                 newConnection.onreconnected((connectionId) => {
                     console.log(`✅ SignalR reconnected! Connection ID: ${connectionId}`);
                     updateConnectionStateRef.current(newConnection);
-                    addAlert("Connection restored successfully", 'success', false);
+                    //addAlert("Connection restored successfully", 'success', false);
                     lastHeartbeat.current = new Date();
                 });
 
@@ -600,7 +600,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
                     if (reconnectAttempts.current >= maxReconnectAttempts.current) {
                         addAlert("Connection failed after maximum retry attempts. Please refresh the page.", 'error', false);
                     } else if (error) {
-                        addAlert(`Connection closed: ${error.message}`, 'error', false);
+                        //addAlert(`Connection closed: ${error.message}`, 'error', false);
                         // Attempt manual reconnect after a delay
                         setTimeout(() => {
                             console.log('🔄 Attempting manual reconnect after connection close...');
@@ -631,7 +631,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
             setConnection(null);
             updateConnectionStateRef.current(null);
             setStatus('error'); // Update status to error
-            addAlert(`Connection failed: ${errorMessage}`, 'error', false);
+            //addAlert(`Connection failed: ${errorMessage}`, 'error', false);
             isConnectingRef.current = false; // Reset connecting flag
 
             // Retry after delay if not too many attempts

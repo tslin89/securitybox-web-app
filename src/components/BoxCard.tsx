@@ -139,7 +139,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
 
   const getBoxPositionInfo = () => {
     if (box.boxPosition === null) return { text: 'Unknown', color: 'default' as const };
-    return box.boxPosition === 1
+    return box.boxPosition === 0
       ? { text: 'Stolen', color: 'error' as const }
       : { text: 'In place', color: 'success' as const };
   };
@@ -152,7 +152,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
   const doorState = getDoorStateInfo();
   const boxPosition = getBoxPositionInfo();
   const weightInfo = getWeightInfo();
-  const isDataAvailable = box.receivedTime !== null;
+  const isDataAvailable = box.timeStamp !== null;
 
   return (
     <>
@@ -263,7 +263,7 @@ export default function BoxCard({ box, onRefresh }: BoxCardProps) {
                 Last Updated:
               </Typography>
               <Chip
-                label={formatDateTime(box.receivedTime)}
+                label={formatDateTime(box.timeStamp)}
                 color={isDataAvailable ? 'primary' : 'default'}
                 size="small"
                 variant="outlined"
