@@ -80,7 +80,12 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   // columns
   const columns = useMemo<GridColDef<TxRow>[]>(
     () => [
-      { field: 'id', headerName: 'ID', minWidth: 70, flex: 0.3 },
+      { 
+        field: 'id', 
+        headerName: 'ID', 
+        minWidth: 70, 
+        flex: 0.3 
+      },
       {
         field: 'timeStamp',
         headerName: 'Timestamp',
@@ -103,7 +108,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
       {
         field: 'boxName',
         headerName: 'Box',
-        minWidth: 180,
+        minWidth: 150,
         flex: 0.8,
         renderCell: (params: any) => {
           const boxName = params?.row?.boxName;
@@ -119,7 +124,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
       {
         field: 'eventDescription',
         headerName: 'Event Description',
-        minWidth: 100,
+        minWidth: 180,
         flex: 1.2,
         renderCell: (params) => {
           const eventCode = params.row.eventCode;
@@ -189,7 +194,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
       {
         field: 'fingerprintUser',
         headerName: 'Fingerprint User',
-        minWidth: 130,
+        minWidth: 100,
         flex: 0.8,
         renderCell: (params) => {
           let name = params.row.fingerprintUser ?? '';
@@ -214,21 +219,21 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
         type: 'number',
         minWidth: 80,
         flex: 0.5,
-        valueFormatter: (value) => value != null ? Number(value as number).toLocaleString() : '',
+        valueFormatter: (value) => value != null ? Number(value as number).toLocaleString() + ' g' : '',
       },
 
     ],
     []
   );
 
-  const columnVisibilityModel = useMemo(
-    () => ({
-      fingerprintUser: !isXs,
-      totalWeight: !isXs,
-      boxPosition: !isXs,
-    }),
-    [isXs]
-  );
+  // const columnVisibilityModel = useMemo(
+  //   () => ({
+  //     fingerprintUser: !isXs,
+  //     totalWeight: !isXs,
+  //     boxPosition: !isXs,
+  //   }),
+  //   [isXs]
+  // );
 
   // fetch current page from your existing API
   async function fetchPage() {
@@ -304,7 +309,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
         sortingMode="client"
         // no server filter/search since your API doesn't support it yet
         filterMode="client"
-        columnVisibilityModel={columnVisibilityModel}
+        //columnVisibilityModel={columnVisibilityModel}
         // toolbar: quick filter will only filter the current page (client mode)
         slots={{ toolbar: GridToolbar }}
         slotProps={{

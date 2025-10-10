@@ -8,16 +8,22 @@ import {
   Box,
   Button,
   Chip,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { Refresh as RefreshIcon, Wifi as WifiIcon } from '@mui/icons-material';
 import { BoxData, getUserBoxData } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useSignalR } from '../contexts/SignalRContext';
 import BoxCard from '../components/BoxCard';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 export default function BoxesList() {
   const { user } = useAuth();
   const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   const [boxes, setBoxes] = useState<BoxData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +32,7 @@ export default function BoxesList() {
 
   const fetchBoxes = useCallback(async () => {
     if (!user) return;
-    
+
     try {
       setError(null);
       const response = await getUserBoxData(user.userID, 0); // Get all boxes
@@ -44,13 +50,13 @@ export default function BoxesList() {
 
   const refreshBox = useCallback(async (boxId: number) => {
     if (!user) return;
-    
+
     try {
       const response = await getUserBoxData(user.userID, boxId);
       if (response.status === 1 && response.data && response.data.length > 0) {
         const updatedBox = response.data[0];
-        setBoxes(prevBoxes => 
-          prevBoxes.map(box => 
+        setBoxes(prevBoxes =>
+          prevBoxes.map(box =>
             box.boxID === boxId ? updatedBox : box
           )
         );
@@ -90,7 +96,7 @@ export default function BoxesList() {
   // SignalR real-time updates
   useEffect(() => {
     console.log('🔌 Setting up SignalR transaction update listener...');
-    
+
     const handleSignalRUpdate = (eventType: string) => {
       // Only refresh if page is visible
       if (isPageVisible) {
@@ -106,10 +112,10 @@ export default function BoxesList() {
       console.log('🔄 SignalR transaction update callback triggered in BoxesList');
       handleSignalRUpdate('transaction update');
     };
-    
+
     console.log('🔌 Registering transaction update callback...');
     onTransactionUpdate(handleTransactionUpdate);
-    
+
     return () => {
       console.log('🔌 Unregistering transaction update callback...');
       offTransactionUpdate(handleTransactionUpdate);
@@ -148,10 +154,7 @@ export default function BoxesList() {
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Box Status & Security Control
-              </Typography>
+            <Box>
               {isPageVisible && (
                 <Chip
                   icon={<WifiIcon />}
@@ -162,20 +165,40 @@ export default function BoxesList() {
                 />
               )}
             </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, mt: 1 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                Box Status & Security Control
+              </Typography>
+
+            </Box>
             <Typography variant="body2" color="text.secondary">
               Monitor and manage your IoT Enabled Security Boxes.
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
-              onClick={handleRefreshAll}
-              disabled={refreshing}
-            >
-              {refreshing ? 'Refreshing...' : 'Refresh All'}
-            </Button>
-            
+            {isXs ? (
+              <Tooltip title={refreshing ? 'Refreshing…' : 'Refresh All'}>
+                <span>
+                  <IconButton
+                    color="primary"
+                    onClick={handleRefreshAll}
+                    disabled={refreshing}
+                  >
+                    {refreshing ? <CircularProgress size={20} /> : <RefreshIcon />}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : (
+              <Button
+                variant="outlined"
+                startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
+                onClick={handleRefreshAll}
+                disabled={refreshing}
+              >
+                {refreshing ? 'Refreshing...' : 'Refresh All'}
+              </Button>
+            )}
+
           </Box>
         </Box>
       </Stack>
