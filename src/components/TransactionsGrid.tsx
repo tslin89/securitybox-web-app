@@ -11,20 +11,22 @@ import {
 } from '@mui/x-data-grid';
 
 import { getTransactions } from '../services/api';
-import { useSignalR } from '../contexts/SignalRContext';
+// import { useSignalR } from '../contexts/SignalRContext';
 import { useAuth } from '../contexts/AuthContext';
-import { formatDateTime } from '../utils/dateFormatter';
+import { formatDateTime, formatTime, formatDate } from '../utils/dateFormatter';
 
 // --- Types that match your API ---
 export type TxRow = {
   id: number;
   timeStamp: string;  // ISO string
-  boxID: number;
+  boxID?: number; // kept for backward compatibility
+  boxName?: string; // new field from API
   eventCode: string;
   eventDescription: string;
   eventType: number;  // 0=info, 1=warning, 2=success, 3=error
   doorState: number;
-  fingerprintNum: number;
+  fingerprintNum?: number; // kept for backward compatibility
+  fingerprintUser?: string | null; // new field from API
   totalWeight: number;
   boxPosition: number;
   securityStatus: number;
@@ -66,7 +68,7 @@ function getEventDescription(eventCode: string, eventCodes: any[]): string {
 const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down('sm'));
-  const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
+  // const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
   const { user, eventCodes } = useAuth() as any; // adjust typing to your AuthContext
 
   // grid state
@@ -78,22 +80,47 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   // columns
   const columns = useMemo<GridColDef<TxRow>[]>(
     () => [
-      { field: 'id', headerName: 'ID', minWidth: 90, flex: 0.3 },
+      { field: 'id', headerName: 'ID', minWidth: 70, flex: 0.3 },
       {
         field: 'timeStamp',
         headerName: 'Timestamp',
-        minWidth: 170,
-        flex: 0.9,
+        minWidth: 100,
+        flex: 0.7,
         type: 'dateTime',
         //valueGetter: (row) => (row.value ? new Date(row.value as string) : null),
         valueFormatter: (value) => formatDateTime(value),
+        renderCell: (params: any) => {
+          const ts = params?.row?.timeStamp;
+          if (!ts) return '--';
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3, mt: 1 }}>
+              <span>{formatDate(ts)}</span>
+              <span style={{ color: theme.palette.text.secondary }}>{formatTime(ts)}</span>
+            </Box>
+          );
+        },
       },
-      { field: 'boxID', headerName: 'Box ID', minWidth: 110, flex: 0.5 },
+      {
+        field: 'boxName',
+        headerName: 'Box',
+        minWidth: 180,
+        flex: 0.8,
+        renderCell: (params: any) => {
+          const boxName = params?.row?.boxName;
+          if (!boxName) return params?.row?.boxID != null ? `Box ID: ${params.row.boxID}` : '';
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3, mt: 1 }}>
+              <span>{boxName}</span>
+              <span style={{ color: theme.palette.text.secondary }}>{`Box ID: ${params.row.boxID}`}</span>
+            </Box>
+          );
+        },
+      },
       {
         field: 'eventDescription',
         headerName: 'Event Description',
-        minWidth: 200,
-        flex: 1.5,
+        minWidth: 100,
+        flex: 1.2,
         renderCell: (params) => {
           const eventCode = params.row.eventCode;
           const eventDescription = getEventDescription(eventCode, eventCodes);
@@ -111,7 +138,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
       {
         field: 'doorState',
         headerName: 'Door',
-        minWidth: 120,
+        minWidth: 100,
         flex: 0.6,
         renderCell: (params) => {
           const open = Number(params.value) === 1;
@@ -128,7 +155,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
       {
         field: 'boxPosition',
         headerName: 'Position',
-        minWidth: 120,
+        minWidth: 100,
         flex: 0.6,
         renderCell: (params) => {
           const stolen = Number(params.value) === 1;
@@ -145,7 +172,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
       {
         field: 'securityStatus',
         headerName: 'Security',
-        minWidth: 120,
+        minWidth: 100,
         flex: 0.6,
         renderCell: (params) => {
           const open = Number(params.value) === 1;
@@ -159,13 +186,34 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
           );
         },
       },
-      { field: 'fingerprintNum', headerName: 'Fingerprint ID', minWidth: 100, flex: 0.6, type: 'number' },
+      {
+        field: 'fingerprintUser',
+        headerName: 'Fingerprint User',
+        minWidth: 130,
+        flex: 0.8,
+        renderCell: (params) => {
+          let name = params.row.fingerprintUser ?? '';
+          if (!name)
+            name = "NA";
+
+          const id = params.row.fingerprintNum != null ? String(params.row.fingerprintNum) : '';
+
+
+          return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.3, mt: 1 }}>
+              <span>{name}</span>
+              <span style={{ color: theme.palette.text.secondary }}>{`ID: ${id}`}</span>
+            </Box>
+          );
+
+        },
+      },
       {
         field: 'totalWeight',
         headerName: 'Weight (g)',
         type: 'number',
-        minWidth: 130,
-        flex: 0.6,
+        minWidth: 80,
+        flex: 0.5,
         valueFormatter: (value) => value != null ? Number(value as number).toLocaleString() : '',
       },
 
@@ -175,7 +223,7 @@ const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
 
   const columnVisibilityModel = useMemo(
     () => ({
-      fingerprintNum: !isXs,
+      fingerprintUser: !isXs,
       totalWeight: !isXs,
       boxPosition: !isXs,
     }),
