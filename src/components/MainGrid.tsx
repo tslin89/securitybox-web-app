@@ -14,12 +14,12 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import InputLabel from '@mui/material/InputLabel';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { BarChart, LineChart, PieChart } from '@mui/x-charts';
+import { BarChart, LineChart } from '@mui/x-charts';
 import { getDashboardOverview } from '../services/api';
 import { EVENT_SETS } from '../constants/events';
 import { useTheme } from '@mui/material/styles';
 import { formatTime } from '../utils/dateFormatter';
-import { useAuth } from '../contexts/AuthContext';
+//import { useAuth } from '../contexts/AuthContext';
 
 function StatCard({ title, value }: { title: string; value: number | string }) {
   const theme = useTheme();
@@ -46,9 +46,11 @@ function AreaGradient({ color, id }: { color: string; id: string }) {
   );
 }
 
+
+
 export default function MainGrid() {
   const theme = useTheme();
-  const { eventCodes } = useAuth();
+  //const { eventCodes } = useAuth();
   const [data, setData] = React.useState<Awaited<ReturnType<typeof getDashboardOverview>> | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -128,17 +130,24 @@ export default function MainGrid() {
   const deliveriesSeries = xDates.map(d => EVENT_SETS.deliveries.reduce((acc, c) => acc + (byDate[d][c] || 0), 0));
   const incidentsParcelSeries = xDates.map(d => (byDate[d]['C007'] || 0));
   const incidentsBoxSeries = xDates.map(d => (byDate[d]['C009'] || 0));
-
-  // Helper function to get event description from API data
-  const getEventDescription = (eventCode: string) => {
-    const event = eventCodes.find(e => e.eventCode === eventCode);
-    return event ? event.eventDescription : 'Unknown Event';
+  
+  
+  // Format dates for x-axis display (MMM d format)
+  const formatDateForAxis = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  // Helper function to get event description from API data
+  // const getEventDescription = (eventCode: string) => {
+  //   const event = eventCodes.find(e => e.eventCode === eventCode);
+  //   return event ? event.eventDescription : 'Unknown Event';
+  // };
+
   // Pie: event mix (last N days)
-  const pieData = Object.entries(
-    countsSinceStart.reduce((m, x) => { m[x.eventCode] = (m[x.eventCode] ?? 0) + x.total; return m; }, {} as Record<string, number>)
-  ).map(([code, total]) => ({ label: `${code} ${getEventDescription(code)}`, value: total }));
+  // const pieData = Object.entries(
+  //   countsSinceStart.reduce((m, x) => { m[x.eventCode] = (m[x.eventCode] ?? 0) + x.total; return m; }, {} as Record<string, number>)
+  // ).map(([code, total]) => ({ label: `${code} ${getEventDescription(code)}`, value: total }));
 
   return (
     <Box>
@@ -203,9 +212,8 @@ export default function MainGrid() {
               <BarChart
                 height={280}
                 borderRadius={5}
-                // barLabel={(bar) => `${bar.value}`}
                 sx={{ backgroundColor: theme.palette.background.paper }}
-                xAxis={[{ scaleType: 'band', data: xDates }]}
+                xAxis={[{ scaleType: 'band', data: xDates.map(formatDateForAxis) }]}
                 series={[{ data: deliveriesSeries, label: 'Deliveries' }]}
               />
             </CardContent>
@@ -221,10 +229,10 @@ export default function MainGrid() {
                 height={280}
                 borderRadius={5}
                 sx={{ backgroundColor: theme.palette.background.paper }}
-                xAxis={[{ scaleType: 'band', data: xDates }]}
+                xAxis={[{ scaleType: 'band', data: xDates.map(formatDateForAxis) }]}
                 series={[
-                  { data: incidentsParcelSeries, label: 'Parcel stolen (C007)', stack: 'inc', color: theme.palette.warning.main },
-                  { data: incidentsBoxSeries, label: 'Box stolen (C009)', stack: 'inc', color: theme.palette.error.main },
+                  { data: incidentsParcelSeries, label: 'Parcel stolen', stack: 'inc', color: theme.palette.warning.main },
+                  { data: incidentsBoxSeries, label: 'Box stolen', stack: 'inc', color: theme.palette.error.main },
                 ]}
               />
             </CardContent>
@@ -239,10 +247,7 @@ export default function MainGrid() {
               <LineChart
                 height={280}
                 xAxis={[{
-                  scaleType: 'point', data: weightSeries.map(x => {
-                    const d = new Date(x.date);
-                    return `${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
-                  })
+                  scaleType: 'point', data: weightSeries.map(x => formatDateForAxis(x.date))
                 }]}
                 series={[{
                   data: weightSeries.map(x => x.avgWeight),
