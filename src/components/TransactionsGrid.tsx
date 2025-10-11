@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, forwardRef, useImperativeHandle } from 'r
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
+//import useMediaQuery from '@mui/material/useMediaQuery';
 import {
   DataGrid,
   GridColDef,
@@ -67,7 +67,7 @@ function getEventDescription(eventCode: string, eventCodes: any[]): string {
 
 const TransactionsGrid = forwardRef<TransactionsGridRef>((props, ref) => {
   const theme = useTheme();
-  const isXs = useMediaQuery(theme.breakpoints.down('sm'));
+  // const isXs = useMediaQuery(theme.breakpoints.down('sm'));
   // const { onTransactionUpdate, offTransactionUpdate } = useSignalR();
   const { user, eventCodes } = useAuth() as any; // adjust typing to your AuthContext
 

@@ -74,10 +74,10 @@ export default function BoxesList() {
   };
 
   // Test function to manually trigger SignalR callback
-  const testSignalRCallback = () => {
-    console.log('🧪 Testing SignalR callback manually...');
-    fetchBoxes();
-  };
+  // const testSignalRCallback = () => {
+  //   console.log('🧪 Testing SignalR callback manually...');
+  //   fetchBoxes();
+  // };
 
   // Page visibility detection
   useEffect(() => {
