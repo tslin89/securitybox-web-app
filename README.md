@@ -1,70 +1,221 @@
-# Getting Started with Create React App
+# Winter Security Box – IoT Security Management Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A web-based management application for an IoT-enabled smart security box, designed to provide secure parcel storage, remote monitoring, user management and real-time security notifications.
 
-## Available Scripts
+The application provides a centralised interface for managing security boxes, monitoring device activity, managing fingerprint access and reviewing transaction history.
 
-In the project directory, you can run:
+## Application Screenshots
 
-### `npm start`
+<!-- Replace the image path with your uploaded screenshot filename -->
+<p align="center">
+  <img src="screenshots/securitybox-dashboard.png" alt="Winter Security Box Dashboard" width="100%">
+</p>
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Overview
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The Winter Security Box project combines IoT hardware with a web-based management platform to improve the security and convenience of parcel deliveries.
 
-### `npm test`
+The React frontend communicates with backend APIs hosted on Azure to retrieve device information, manage users, process security-related operations and monitor activity. Real-time communication is handled through SignalR, while browser push notifications provide alerts for relevant security events.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+The application supports multiple users and security boxes, with access management and event notification settings.
 
-### `npm run build`
+## Key Features
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Dashboard and Monitoring
+- Dashboard displaying security box statistics and activity summaries.
+- Visualisation of security events and historical activity.
+- Monitoring of box status and recent events.
+- Configurable reporting periods and dashboard refresh.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Security Box Management
+- View and manage registered security boxes.
+- Monitor box status and security-related events.
+- Receive real-time updates when transactions occur.
+- Manually refresh device information when required.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Fingerprint Access Management
+- Register new fingerprint credentials through the connected security box.
+- Remove existing fingerprint registrations.
+- Monitor fingerprint registration progress through status polling.
+- Associate fingerprint access with individual users and security boxes.
 
-### `npm run eject`
+### User Management
+- Create, view, update and delete user accounts.
+- Manage user access to security boxes.
+- Support multiple users and security devices.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Transaction History
+- View historical security and device transactions.
+- Review event timestamps and associated security box information.
+- Monitor security-related activities through a transaction history interface.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Real-Time Notifications
+- SignalR integration for receiving real-time updates from the backend.
+- Browser push notifications using the Web Push API.
+- Configurable notification preferences for different event types.
+- Visual alerts for important security events.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Account and Settings
+- User authentication and session management.
+- Profile and account management.
+- Configurable event notification preferences.
+- Responsive interface for desktop and mobile devices.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Technology Stack
 
-## Learn More
+| Category | Technologies |
+|---|---|
+| Frontend | React 19, TypeScript, JavaScript, HTML5, CSS3 |
+| UI Framework | Material UI (MUI) |
+| Data Visualisation | MUI X Charts |
+| Data Tables | MUI X Data Grid |
+| Routing | React Router |
+| Real-Time Communication | Microsoft SignalR Client |
+| Notifications | Web Push API, Service Workers |
+| API Integration | REST APIs, Fetch API |
+| Cryptography Library | CryptoJS |
+| Cloud Platform | Microsoft Azure |
+| Hosting / Deployment | Azure Static Web Apps |
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Architecture and Communication
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+The frontend communicates with the backend through REST APIs and SignalR.
 
-### Code Splitting
+```text
+              User / Browser
+                    |
+                    v
+          React Web Application
+             (TypeScript)
+                    |
+          +---------+---------+
+          |                   |
+          v                   v
+      REST APIs          SignalR Client
+          |                   |
+          +---------+---------+
+                    |
+                    v
+          Azure Backend Services
+             (Azure Functions)
+                    |
+          +---------+---------+
+          |                   |
+          v                   v
+      Data Storage       IoT Security Box
+                              |
+                    +---------+---------+
+                    |                   |
+                    v                   v
+              Fingerprint           Security
+               Sensor               Events
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+*The diagram illustrates the frontend's integration points and the overall system concept. Backend implementation details and the underlying storage architecture are not included in this frontend repository.*
 
-### Analyzing the Bundle Size
+## Real-Time Communication
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+SignalR is used to maintain a real-time connection between the web application and backend services.
 
-### Making a Progressive Web App
+When security box transactions or relevant events occur, the backend can notify connected clients. The frontend processes these events and updates relevant information, including:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- Security box information.
+- Transaction and activity records.
+- Application notifications and alerts.
 
-### Advanced Configuration
+The application also handles connection status and reconnection attempts to maintain communication with the backend.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Push Notifications
 
-### Deployment
+The application supports browser-based push notifications through the Web Push API and service workers.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Users can receive notifications about relevant security events even when the application is not actively being viewed, subject to browser support and notification permissions.
 
-### `npm run build` fails to minify
+## Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Prerequisites
+
+- Node.js and npm
+- A modern web browser
+- Access to the configured backend API services for full application functionality
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone <your-repository-url>
+```
+
+Navigate to the project directory:
+
+```bash
+cd securitybox-web-app
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm start
+```
+
+The application will normally be available at:
+
+```text
+http://localhost:3000
+```
+
+### Backend Configuration
+
+The frontend requires access to the corresponding backend API services for authentication, user management, security box operations, transaction retrieval and real-time communication.
+
+Configure the backend API endpoint and required service settings before running the application. Do not commit Azure Function keys, credentials or other private configuration to the repository.
+
+## Project Structure
+
+```text
+securitybox-web-app/
+├── public/
+│   ├── service-worker.js
+│   ├── manifest.json
+│   └── ...
+├── src/
+│   ├── alerts/          # Application alert management
+│   ├── components/     # Reusable UI components
+│   ├── config/         # Application configuration
+│   ├── constants/      # Shared constants
+│   ├── contexts/       # Authentication and SignalR contexts
+│   ├── hooks/          # Custom React hooks
+│   ├── interfaces/     # TypeScript interfaces
+│   ├── layout/         # Application layout
+│   ├── pages/          # Application pages
+│   ├── routes/         # Application routing and route protection
+│   ├── services/       # Backend API integration
+│   ├── theme/          # UI theme configuration
+│   └── utils/          # Utility functions
+├── package.json
+└── tsconfig.json
+```
+
+## Engineering Highlights
+
+This project provided practical experience in:
+
+- Building a responsive single-page application using React and TypeScript.
+- Integrating frontend applications with RESTful backend services.
+- Implementing real-time communication using SignalR.
+- Integrating IoT device operations with a web-based management interface.
+- Implementing fingerprint registration workflows with asynchronous status polling.
+- Developing browser push notifications using service workers and the Web Push API.
+- Managing authentication state, protected routes and user sessions.
+- Building interactive dashboards and data visualisations using Material UI.
+
+## Licence
+
+See the [LICENSE](LICENSE) file for licensing information.
