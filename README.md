@@ -6,9 +6,13 @@ The application provides a centralised interface for managing security boxes, mo
 
 ## Application Screenshots
 
-<!-- Replace the image path with your uploaded screenshot filename -->
 <p align="center">
   <img src="screenshots/securitybox-dashboard.png" alt="Winter Security Box Dashboard" width="100%">
+</p>
+
+## Hardware Overview
+<p align="center">
+  <img src="screenshots/hardware-overview.png" alt="Winter Security Box Hardware Overview" width="100%">
 </p>
 
 ## Overview
